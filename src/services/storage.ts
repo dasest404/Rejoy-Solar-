@@ -18,7 +18,16 @@ import {
   Quotation,
   WorkflowStageKey,
   StageStatus,
-  LeadStatus
+  LeadStatus,
+  ProductItem,
+  Vendor,
+  PurchaseOrder,
+  PurchaseItem,
+  BillOfMaterials,
+  BOMItem,
+  SalesInvoice,
+  InvoiceLineItem,
+  StockMovement
 } from '../types/solar';
 import { buildStandardWorkflowStages, WorkflowProgressLevel } from './workflowStages';
 
@@ -38,6 +47,12 @@ const STORAGE_KEYS = {
   SETTINGS: 'solar_erp_settings_v2',
   SURVEYS: 'solar_erp_surveys_v2',
   QUOTATIONS: 'solar_erp_quotations_v2',
+  PRODUCTS: 'solar_erp_products_v2',
+  VENDORS: 'solar_erp_vendors_v2',
+  PURCHASE_ORDERS: 'solar_erp_purchase_orders_v2',
+  BOMS: 'solar_erp_boms_v2',
+  SALES_INVOICES: 'solar_erp_sales_invoices_v2',
+  STOCK_MOVEMENTS: 'solar_erp_stock_movements_v2',
 };
 
 // Initial realistic data
@@ -1243,6 +1258,787 @@ const initialQuotations: Quotation[] = [
   }
 ];
 
+const initialProducts: ProductItem[] = [
+  {
+    id: 'prod-1',
+    sku: 'MOD-WAA-540',
+    name: 'Waaree 540Wp Mono PERC Bifacial Solar PV Module',
+    category: 'Solar Panels',
+    brand: 'Waaree Energies',
+    specification: '540Wp Bifacial Dual Glass, 144 Half-cut Cells, IP68 Junction Box',
+    unit: 'NOS',
+    hsnCode: '85414011',
+    unitPrice: 10200,
+    sellingPrice: 12200,
+    currentStock: 350,
+    minStockThreshold: 80,
+    location: 'Warehouse A - Bay 1',
+    preferredVendorId: 'vnd-1',
+    preferredVendorName: 'Waaree Energies Limited',
+    createdAt: '2026-08-01T09:00:00Z',
+    updatedAt: '2026-09-10T14:30:00Z'
+  },
+  {
+    id: 'prod-2',
+    sku: 'MOD-ADN-545',
+    name: 'Adani 545Wp Mono PERC Solar Module',
+    category: 'Solar Panels',
+    brand: 'Adani Solar',
+    specification: '545Wp High Efficiency Mono PERC, Multi-Busbar, Anodized Al Frame',
+    unit: 'NOS',
+    hsnCode: '85414011',
+    unitPrice: 10400,
+    sellingPrice: 12500,
+    currentStock: 220,
+    minStockThreshold: 60,
+    location: 'Warehouse A - Bay 2',
+    preferredVendorId: 'vnd-1',
+    preferredVendorName: 'Waaree Energies Limited',
+    createdAt: '2026-08-01T09:00:00Z',
+    updatedAt: '2026-09-08T11:00:00Z'
+  },
+  {
+    id: 'prod-3',
+    sku: 'INV-SUN-110',
+    name: 'Sungrow 110kW String Inverter SG110CX',
+    category: 'Inverters',
+    brand: 'Sungrow',
+    specification: '110kW 3-Phase Multi-MPPT (9 MPPTs), AFCI Arc Fault, IP66 Outdoor',
+    unit: 'NOS',
+    hsnCode: '85044090',
+    unitPrice: 285000,
+    sellingPrice: 330000,
+    currentStock: 5,
+    minStockThreshold: 2,
+    location: 'Warehouse B - Secure Rack 1',
+    preferredVendorId: 'vnd-2',
+    preferredVendorName: 'Sungrow Power Supply India Pvt Ltd',
+    createdAt: '2026-08-02T10:00:00Z',
+    updatedAt: '2026-09-12T16:00:00Z'
+  },
+  {
+    id: 'prod-4',
+    sku: 'INV-GRO-50',
+    name: 'Growatt 50kW On-Grid Inverter MAC 50KTL3-X',
+    category: 'Inverters',
+    brand: 'Growatt',
+    specification: '50kW 3-Phase, 3 MPPTs, Type II SPD AC/DC, OLED & Touch Key',
+    unit: 'NOS',
+    hsnCode: '85044090',
+    unitPrice: 145000,
+    sellingPrice: 175000,
+    currentStock: 8,
+    minStockThreshold: 2,
+    location: 'Warehouse B - Secure Rack 2',
+    preferredVendorId: 'vnd-2',
+    preferredVendorName: 'Sungrow Power Supply India Pvt Ltd',
+    createdAt: '2026-08-02T10:00:00Z',
+    updatedAt: '2026-09-05T10:00:00Z'
+  },
+  {
+    id: 'prod-5',
+    sku: 'STR-HDG-15',
+    name: 'Hot Dip Galvanized Solar Mounting Structure 15° Tilt',
+    category: 'Mounting Structures',
+    brand: 'Jindal Steel',
+    specification: '80 Micron HDG Steel, 150 kmph Wind Speed Certified, 2-in-Portrait',
+    unit: 'SETS',
+    hsnCode: '73089090',
+    unitPrice: 3800,
+    sellingPrice: 4600,
+    currentStock: 140,
+    minStockThreshold: 40,
+    location: 'Yard 1 - Heavy Steel',
+    preferredVendorId: 'vnd-3',
+    preferredVendorName: 'Jindal Aluminium & Steel Works',
+    createdAt: '2026-08-03T09:30:00Z',
+    updatedAt: '2026-09-11T12:00:00Z'
+  },
+  {
+    id: 'prod-6',
+    sku: 'CAB-DC-4R',
+    name: 'Polycab 1C x 4 sq.mm Solar DC Cable (Red)',
+    category: 'Electrical & Cables',
+    brand: 'Polycab',
+    specification: 'EN 50618 TUV Certified, Crosslinked Polyolefin, 1.5kV DC Rated',
+    unit: 'METERS',
+    hsnCode: '85444999',
+    unitPrice: 46,
+    sellingPrice: 58,
+    currentStock: 1800,
+    minStockThreshold: 400,
+    location: 'Warehouse C - Cable Reel 1',
+    preferredVendorId: 'vnd-4',
+    preferredVendorName: 'Polycab India Limited',
+    createdAt: '2026-08-04T11:00:00Z',
+    updatedAt: '2026-09-14T10:00:00Z'
+  },
+  {
+    id: 'prod-7',
+    sku: 'CAB-DC-4B',
+    name: 'Polycab 1C x 4 sq.mm Solar DC Cable (Black)',
+    category: 'Electrical & Cables',
+    brand: 'Polycab',
+    specification: 'EN 50618 TUV Certified, Crosslinked Polyolefin, UV Resistant',
+    unit: 'METERS',
+    hsnCode: '85444999',
+    unitPrice: 46,
+    sellingPrice: 58,
+    currentStock: 1750,
+    minStockThreshold: 400,
+    location: 'Warehouse C - Cable Reel 2',
+    preferredVendorId: 'vnd-4',
+    preferredVendorName: 'Polycab India Limited',
+    createdAt: '2026-08-04T11:00:00Z',
+    updatedAt: '2026-09-14T10:00:00Z'
+  },
+  {
+    id: 'prod-8',
+    sku: 'CAB-AC-70',
+    name: 'Havells 3.5C x 70 sq.mm Al Armoured LT XLPE Cable',
+    category: 'Electrical & Cables',
+    brand: 'Havells',
+    specification: '1.1kV Grade Aluminum Conductor, XLPE Insulated, Galvanized Steel Armoured',
+    unit: 'METERS',
+    hsnCode: '85444920',
+    unitPrice: 390,
+    sellingPrice: 490,
+    currentStock: 480,
+    minStockThreshold: 150,
+    location: 'Warehouse C - Heavy Drums',
+    preferredVendorId: 'vnd-4',
+    preferredVendorName: 'Polycab India Limited',
+    createdAt: '2026-08-04T11:00:00Z',
+    updatedAt: '2026-09-15T09:00:00Z'
+  },
+  {
+    id: 'prod-9',
+    sku: 'EARTH-CH-50',
+    name: 'Chemical Earthing Electrode Kit 50mm x 3m with BFC Compound',
+    category: 'Electrical & Cables',
+    brand: 'Truepower',
+    specification: 'Pure Copper Bonded 250 Micron, 2 Bags 25kg Earth Enhancing Compound',
+    unit: 'SETS',
+    hsnCode: '85359090',
+    unitPrice: 4500,
+    sellingPrice: 5800,
+    currentStock: 35,
+    minStockThreshold: 10,
+    location: 'Warehouse A - Bay 5',
+    preferredVendorId: 'vnd-5',
+    preferredVendorName: 'Truepower Earthings & Lightning Systems',
+    createdAt: '2026-08-05T14:00:00Z',
+    updatedAt: '2026-09-09T17:00:00Z'
+  },
+  {
+    id: 'prod-10',
+    sku: 'LA-ESE-107',
+    name: 'Early Streamer Emission (ESE) Lightning Arrestor 107m',
+    category: 'Safety & Accessories',
+    brand: 'Truepower',
+    specification: 'NFC 17-102 Standard Compliant, Stainless Steel 316, 107m Protection Radius',
+    unit: 'NOS',
+    hsnCode: '85354010',
+    unitPrice: 21000,
+    sellingPrice: 27500,
+    currentStock: 9,
+    minStockThreshold: 3,
+    location: 'Warehouse B - Shelf 3',
+    preferredVendorId: 'vnd-5',
+    preferredVendorName: 'Truepower Earthings & Lightning Systems',
+    createdAt: '2026-08-05T14:00:00Z',
+    updatedAt: '2026-09-01T15:00:00Z'
+  },
+  {
+    id: 'prod-11',
+    sku: 'BOX-ACDB-100',
+    name: 'IP65 ACDB 100kW Junction Box with Type II SPD & MCCB',
+    category: 'Electrical & Cables',
+    brand: 'SolarPulse Fab',
+    specification: 'Polycarbonate Enclosure, 200A 4P MCCB, 40kA SPD, Digital Multifunction Meter',
+    unit: 'NOS',
+    hsnCode: '85371000',
+    unitPrice: 29000,
+    sellingPrice: 37000,
+    currentStock: 6,
+    minStockThreshold: 2,
+    location: 'Warehouse B - Shelf 1',
+    preferredVendorId: 'vnd-4',
+    preferredVendorName: 'Polycab India Limited',
+    createdAt: '2026-08-06T12:00:00Z',
+    updatedAt: '2026-09-12T10:00:00Z'
+  },
+  {
+    id: 'prod-12',
+    sku: 'FAST-SS-M8',
+    name: 'Stainless Steel Fasteners & Mid/End Clamps Pack M8/M10',
+    category: 'Civil & Fasteners',
+    brand: 'Jindal Fasteners',
+    specification: 'SS 304 Grade Hex Bolts, Spring Washers, EPDM Rubber Pad Pre-assembled',
+    unit: 'PACKS',
+    hsnCode: '73181500',
+    unitPrice: 1200,
+    sellingPrice: 1600,
+    currentStock: 65,
+    minStockThreshold: 20,
+    location: 'Warehouse A - Bin 12',
+    preferredVendorId: 'vnd-3',
+    preferredVendorName: 'Jindal Aluminium & Steel Works',
+    createdAt: '2026-08-06T12:00:00Z',
+    updatedAt: '2026-09-10T11:00:00Z'
+  }
+];
+
+const initialVendors: Vendor[] = [
+  {
+    id: 'vnd-1',
+    vendorCode: 'VND-001',
+    name: 'Waaree Energies Limited',
+    contactPerson: 'Ramesh Joshi',
+    email: 'sales@waaree.com',
+    phone: '+91 98200 12345',
+    category: 'Solar Modules',
+    gstNumber: '27AAACW1234F1Z5',
+    address: '602, Western Edge I, Western Express Highway, Borivali East',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    bankDetails: {
+      bankName: 'HDFC Bank Ltd',
+      accountNo: '50200012345678',
+      ifsc: 'HDFC0000123'
+    },
+    paymentTerms: '30 Days Credit',
+    rating: 5,
+    status: 'ACTIVE',
+    createdAt: '2026-07-15T10:00:00Z',
+    updatedAt: '2026-08-20T11:00:00Z'
+  },
+  {
+    id: 'vnd-2',
+    vendorCode: 'VND-002',
+    name: 'Sungrow Power Supply India Pvt Ltd',
+    contactPerson: 'Pooja Rao',
+    email: 'india@sungrowpower.com',
+    phone: '+91 98450 67890',
+    category: 'Inverters',
+    gstNumber: '29AAGCS5678K1Z2',
+    address: 'Plot 45, KIADB Industrial Area, Phase II, Electronic City',
+    city: 'Bengaluru',
+    state: 'Karnataka',
+    bankDetails: {
+      bankName: 'Standard Chartered Bank',
+      accountNo: '23456789012345',
+      ifsc: 'SCBL0036001'
+    },
+    paymentTerms: 'Advance 20%, Balance on Delivery',
+    rating: 5,
+    status: 'ACTIVE',
+    createdAt: '2026-07-16T11:00:00Z',
+    updatedAt: '2026-08-22T14:00:00Z'
+  },
+  {
+    id: 'vnd-3',
+    vendorCode: 'VND-003',
+    name: 'Jindal Aluminium & Steel Works',
+    contactPerson: 'Suresh Jindal',
+    email: 'orders@jindalstructures.in',
+    phone: '+91 98790 34567',
+    category: 'Structures',
+    gstNumber: '24AAACJ9876Q1Z9',
+    address: 'Plot 112, GIDC Industrial Estate, Vatva',
+    city: 'Ahmedabad',
+    state: 'Gujarat',
+    bankDetails: {
+      bankName: 'State Bank of India',
+      accountNo: '31234567890',
+      ifsc: 'SBIN0001234'
+    },
+    paymentTerms: '15 Days Net',
+    rating: 4,
+    status: 'ACTIVE',
+    createdAt: '2026-07-20T10:30:00Z',
+    updatedAt: '2026-08-25T16:00:00Z'
+  },
+  {
+    id: 'vnd-4',
+    vendorCode: 'VND-004',
+    name: 'Polycab India Limited',
+    contactPerson: 'Nitin Mehta',
+    email: 'solar.cables@polycab.com',
+    phone: '+91 98250 89012',
+    category: 'Cables & Switchgear',
+    gstNumber: '24AAACP5544L1Z3',
+    address: 'Polycab House, 771 Mogul Lane, Mahim West',
+    city: 'Vadodara',
+    state: 'Gujarat',
+    bankDetails: {
+      bankName: 'ICICI Bank Ltd',
+      accountNo: '001105001234',
+      ifsc: 'ICIC0000011'
+    },
+    paymentTerms: '30 Days Credit',
+    rating: 5,
+    status: 'ACTIVE',
+    createdAt: '2026-07-22T09:00:00Z',
+    updatedAt: '2026-08-28T12:00:00Z'
+  },
+  {
+    id: 'vnd-5',
+    vendorCode: 'VND-005',
+    name: 'Truepower Earthings & Lightning Systems',
+    contactPerson: 'Kavita Sen',
+    email: 'projects@truepower.biz',
+    phone: '+91 98110 54321',
+    category: 'Cables & Switchgear',
+    gstNumber: '07AABCT3322N1Z4',
+    address: 'B-48, Okhla Industrial Area, Phase 1',
+    city: 'New Delhi',
+    state: 'Delhi',
+    bankDetails: {
+      bankName: 'Axis Bank Ltd',
+      accountNo: '912020012345678',
+      ifsc: 'UTIB0000123'
+    },
+    paymentTerms: 'Immediate Cheque',
+    rating: 4,
+    status: 'ACTIVE',
+    createdAt: '2026-07-25T14:00:00Z',
+    updatedAt: '2026-08-30T10:00:00Z'
+  }
+];
+
+const initialPurchaseOrders: PurchaseOrder[] = [
+  {
+    id: 'po-1',
+    purchaseNumber: 'PO-2026-001',
+    vendorId: 'vnd-1',
+    vendorName: 'Waaree Energies Limited',
+    purchaseDate: '2026-08-10',
+    expectedDeliveryDate: '2026-08-18',
+    receivedDate: '2026-08-18',
+    projectId: 'proj-1',
+    projectTitle: '100 kW Rooftop Solar Plant - ABC Industries',
+    items: [
+      {
+        id: 'poi-1',
+        productId: 'prod-1',
+        productName: 'Waaree 540Wp Mono PERC Bifacial Solar PV Module',
+        sku: 'MOD-WAA-540',
+        category: 'Solar Panels',
+        quantity: 200,
+        unit: 'NOS',
+        unitPrice: 10200,
+        taxRatePercent: 12,
+        taxAmount: 244800,
+        totalPrice: 2284800
+      }
+    ],
+    subtotal: 2040000,
+    taxAmount: 244800,
+    totalAmount: 2284800,
+    status: 'RECEIVED',
+    paymentStatus: 'PAID',
+    paymentDueDate: '2026-09-17',
+    invoiceReference: 'WAA-INV-88910',
+    notes: 'Dispatched directly to ABC Industries site in Sanand. Site survey verified.',
+    stockUpdated: true,
+    createdAt: '2026-08-10T10:00:00Z',
+    updatedAt: '2026-08-18T16:00:00Z'
+  },
+  {
+    id: 'po-2',
+    purchaseNumber: 'PO-2026-002',
+    vendorId: 'vnd-2',
+    vendorName: 'Sungrow Power Supply India Pvt Ltd',
+    purchaseDate: '2026-08-12',
+    expectedDeliveryDate: '2026-08-20',
+    receivedDate: '2026-08-20',
+    projectId: 'proj-1',
+    projectTitle: '100 kW Rooftop Solar Plant - ABC Industries',
+    items: [
+      {
+        id: 'poi-2',
+        productId: 'prod-3',
+        productName: 'Sungrow 110kW String Inverter SG110CX',
+        sku: 'INV-SUN-110',
+        category: 'Inverters',
+        quantity: 2,
+        unit: 'NOS',
+        unitPrice: 285000,
+        taxRatePercent: 12,
+        taxAmount: 68400,
+        totalPrice: 638400
+      }
+    ],
+    subtotal: 570000,
+    taxAmount: 68400,
+    totalAmount: 638400,
+    status: 'RECEIVED',
+    paymentStatus: 'PAID',
+    paymentDueDate: '2026-09-10',
+    invoiceReference: 'SUNG-INV-3321',
+    notes: 'Includes manufacturer warranty certificates and Wi-Fi dongles.',
+    stockUpdated: true,
+    createdAt: '2026-08-12T11:30:00Z',
+    updatedAt: '2026-08-20T17:00:00Z'
+  },
+  {
+    id: 'po-3',
+    purchaseNumber: 'PO-2026-003',
+    vendorId: 'vnd-4',
+    vendorName: 'Polycab India Limited',
+    purchaseDate: '2026-09-05',
+    expectedDeliveryDate: '2026-09-22',
+    projectId: 'proj-2',
+    projectTitle: '50 kW Solar PV Project - Sunrise Textiles',
+    items: [
+      {
+        id: 'poi-3',
+        productId: 'prod-6',
+        productName: 'Polycab 1C x 4 sq.mm Solar DC Cable (Red)',
+        sku: 'CAB-DC-4R',
+        category: 'Electrical & Cables',
+        quantity: 1000,
+        unit: 'METERS',
+        unitPrice: 46,
+        taxRatePercent: 18,
+        taxAmount: 8280,
+        totalPrice: 54280
+      },
+      {
+        id: 'poi-4',
+        productId: 'prod-7',
+        productName: 'Polycab 1C x 4 sq.mm Solar DC Cable (Black)',
+        sku: 'CAB-DC-4B',
+        category: 'Electrical & Cables',
+        quantity: 1000,
+        unit: 'METERS',
+        unitPrice: 46,
+        taxRatePercent: 18,
+        taxAmount: 8280,
+        totalPrice: 54280
+      }
+    ],
+    subtotal: 92000,
+    taxAmount: 16560,
+    totalAmount: 108560,
+    status: 'ORDERED',
+    paymentStatus: 'PARTIALLY_PAID',
+    paymentDueDate: '2026-10-05',
+    notes: 'Delivery expected at central warehouse for string distribution.',
+    stockUpdated: false,
+    createdAt: '2026-09-05T14:00:00Z',
+    updatedAt: '2026-09-05T14:00:00Z'
+  }
+];
+
+const initialBOMs: BillOfMaterials[] = [
+  {
+    id: 'bom-1',
+    bomNumber: 'BOM-2026-001',
+    projectId: 'proj-1',
+    projectCode: 'SOL-2026-001',
+    projectTitle: '100 kW Rooftop Solar Plant',
+    customerName: 'ABC Industries Ltd.',
+    capacityKw: 100,
+    version: 'v1.2',
+    status: 'APPROVED',
+    stockAllocated: true,
+    createdBy: 'Amit Sharma',
+    approvedBy: 'Vikram Patel',
+    approvedAt: '2026-08-16T15:00:00Z',
+    notes: 'Approved based on finalized roof layout drawing Rev 3 with 23° elevated structure.',
+    totalCost: 2471800,
+    items: [
+      {
+        id: 'bomi-1',
+        productId: 'prod-1',
+        productName: 'Waaree 540Wp Mono PERC Bifacial Solar PV Module',
+        sku: 'MOD-WAA-540',
+        category: 'Solar Panels',
+        requiredQty: 185,
+        allocatedQty: 185,
+        unit: 'NOS',
+        estimatedUnitCost: 10200,
+        totalCost: 1887000,
+        status: 'INSTALLED'
+      },
+      {
+        id: 'bomi-2',
+        productId: 'prod-3',
+        productName: 'Sungrow 110kW String Inverter SG110CX',
+        sku: 'INV-SUN-110',
+        category: 'Inverters',
+        requiredQty: 1,
+        allocatedQty: 1,
+        unit: 'NOS',
+        estimatedUnitCost: 285000,
+        totalCost: 285000,
+        status: 'ALLOCATED'
+      },
+      {
+        id: 'bomi-3',
+        productId: 'prod-5',
+        productName: 'Hot Dip Galvanized Solar Mounting Structure 15° Tilt',
+        sku: 'STR-HDG-15',
+        category: 'Mounting Structures',
+        requiredQty: 46,
+        allocatedQty: 46,
+        unit: 'SETS',
+        estimatedUnitCost: 3800,
+        totalCost: 174800,
+        status: 'DISPATCHED'
+      },
+      {
+        id: 'bomi-4',
+        productId: 'prod-6',
+        productName: 'Polycab 1C x 4 sq.mm Solar DC Cable (Red)',
+        sku: 'CAB-DC-4R',
+        category: 'Electrical & Cables',
+        requiredQty: 750,
+        allocatedQty: 750,
+        unit: 'METERS',
+        estimatedUnitCost: 46,
+        totalCost: 34500,
+        status: 'ALLOCATED'
+      },
+      {
+        id: 'bomi-5',
+        productId: 'prod-7',
+        productName: 'Polycab 1C x 4 sq.mm Solar DC Cable (Black)',
+        sku: 'CAB-DC-4B',
+        category: 'Electrical & Cables',
+        requiredQty: 750,
+        allocatedQty: 750,
+        unit: 'METERS',
+        estimatedUnitCost: 46,
+        totalCost: 34500,
+        status: 'ALLOCATED'
+      },
+      {
+        id: 'bomi-6',
+        productId: 'prod-11',
+        productName: 'IP65 ACDB 100kW Junction Box with Type II SPD & MCCB',
+        sku: 'BOX-ACDB-100',
+        category: 'Electrical & Cables',
+        requiredQty: 1,
+        allocatedQty: 1,
+        unit: 'NOS',
+        estimatedUnitCost: 29000,
+        totalCost: 29000,
+        status: 'ALLOCATED'
+      },
+      {
+        id: 'bomi-7',
+        productId: 'prod-9',
+        productName: 'Chemical Earthing Electrode Kit 50mm x 3m with BFC Compound',
+        sku: 'EARTH-CH-50',
+        category: 'Electrical & Cables',
+        requiredQty: 6,
+        allocatedQty: 6,
+        unit: 'SETS',
+        estimatedUnitCost: 4500,
+        totalCost: 27000,
+        status: 'INSTALLED'
+      }
+    ],
+    createdAt: '2026-08-14T11:00:00Z',
+    updatedAt: '2026-08-16T15:00:00Z'
+  },
+  {
+    id: 'bom-2',
+    bomNumber: 'BOM-2026-002',
+    projectId: 'proj-2',
+    projectCode: 'SOL-2026-002',
+    projectTitle: '50 kW Solar PV Project',
+    customerName: 'Sunrise Textiles Ltd.',
+    capacityKw: 50,
+    version: 'v1.0',
+    status: 'RELEASED_TO_SITE',
+    stockAllocated: true,
+    createdBy: 'Amit Sharma',
+    approvedBy: 'Vikram Patel',
+    approvedAt: '2026-09-02T10:00:00Z',
+    notes: 'Released for civil & structure team fabrication.',
+    totalCost: 1189200,
+    items: [
+      {
+        id: 'bomi-201',
+        productId: 'prod-2',
+        productName: 'Adani 545Wp Mono PERC Solar Module',
+        sku: 'MOD-ADN-545',
+        category: 'Solar Panels',
+        requiredQty: 92,
+        allocatedQty: 92,
+        unit: 'NOS',
+        estimatedUnitCost: 10400,
+        totalCost: 956800,
+        status: 'DISPATCHED'
+      },
+      {
+        id: 'bomi-202',
+        productId: 'prod-4',
+        productName: 'Growatt 50kW On-Grid Inverter MAC 50KTL3-X',
+        sku: 'INV-GRO-50',
+        category: 'Inverters',
+        requiredQty: 1,
+        allocatedQty: 1,
+        unit: 'NOS',
+        estimatedUnitCost: 145000,
+        totalCost: 145000,
+        status: 'ALLOCATED'
+      },
+      {
+        id: 'bomi-203',
+        productId: 'prod-5',
+        productName: 'Hot Dip Galvanized Solar Mounting Structure 15° Tilt',
+        sku: 'STR-HDG-15',
+        category: 'Mounting Structures',
+        requiredQty: 23,
+        allocatedQty: 23,
+        unit: 'SETS',
+        estimatedUnitCost: 3800,
+        totalCost: 87400,
+        status: 'DISPATCHED'
+      }
+    ],
+    createdAt: '2026-08-30T10:00:00Z',
+    updatedAt: '2026-09-02T10:00:00Z'
+  }
+];
+
+const initialSalesInvoices: SalesInvoice[] = [
+  {
+    id: 'inv-1',
+    invoiceNumber: 'INV-2026-001',
+    invoiceType: 'TAX_INVOICE',
+    customerId: 'cust-1',
+    customerName: 'ABC Industries Ltd.',
+    customerGst: '24AABCA1234F1Z1',
+    customerAddress: 'Plot 42, GIDC Industrial Estate, Sanand, Ahmedabad',
+    projectId: 'proj-1',
+    projectTitle: '100 kW Rooftop Solar Plant',
+    invoiceDate: '2026-08-15',
+    dueDate: '2026-08-30',
+    status: 'PAID',
+    paymentTerms: '15 Days Net',
+    notes: 'Advance milestone payment receipt #REC-001 received on 14 Aug 2026.',
+    deductStock: true,
+    stockDeducted: true,
+    subtotal: 1250000,
+    taxAmount: 150000,
+    totalAmount: 1400000,
+    items: [
+      {
+        id: 'ili-1',
+        productId: 'prod-1',
+        description: 'Advance Milestone 30%: Supply of 185 Nos Waaree 540Wp Bifacial Solar PV Modules',
+        hsnCode: '85414011',
+        quantity: 185,
+        unit: 'NOS',
+        unitPrice: 6756.75,
+        taxRatePercent: 12,
+        taxAmount: 150000,
+        totalAmount: 1400000
+      }
+    ],
+    createdAt: '2026-08-15T11:00:00Z',
+    updatedAt: '2026-08-20T10:00:00Z'
+  },
+  {
+    id: 'inv-2',
+    invoiceNumber: 'INV-2026-002',
+    invoiceType: 'TAX_INVOICE',
+    customerId: 'cust-2',
+    customerName: 'Sunrise Textiles Ltd.',
+    customerGst: '24AABCS5566G1Z2',
+    customerAddress: 'Ring Road, Surat, Gujarat',
+    projectId: 'proj-2',
+    projectTitle: '50 kW Solar PV Project',
+    invoiceDate: '2026-09-02',
+    dueDate: '2026-09-17',
+    status: 'ISSUED',
+    paymentTerms: '15 Days Net',
+    notes: 'Dispatched inverter and structural material. Milestone inspection scheduled.',
+    deductStock: false,
+    stockDeducted: false,
+    subtotal: 850000,
+    taxAmount: 102000,
+    totalAmount: 952000,
+    items: [
+      {
+        id: 'ili-2',
+        productId: 'prod-4',
+        description: 'Material Milestone: Supply of 50 kW On-Grid Growatt Inverter & HDG Structures',
+        hsnCode: '85044090',
+        quantity: 1,
+        unit: 'SET',
+        unitPrice: 850000,
+        taxRatePercent: 12,
+        taxAmount: 102000,
+        totalAmount: 952000
+      }
+    ],
+    createdAt: '2026-09-02T12:00:00Z',
+    updatedAt: '2026-09-02T12:00:00Z'
+  }
+];
+
+const initialStockMovements: StockMovement[] = [
+  {
+    id: 'sm-1',
+    productId: 'prod-1',
+    productName: 'Waaree 540Wp Mono PERC Bifacial Solar PV Module',
+    sku: 'MOD-WAA-540',
+    movementType: 'PURCHASE_RECEIPT',
+    quantity: 200,
+    balanceAfter: 535,
+    referenceNumber: 'PO-2026-001',
+    notes: 'Received from Waaree Energies Ltd.',
+    timestamp: '2026-08-18T16:00:00Z',
+    performedBy: 'Amit Sharma'
+  },
+  {
+    id: 'sm-2',
+    productId: 'prod-1',
+    productName: 'Waaree 540Wp Mono PERC Bifacial Solar PV Module',
+    sku: 'MOD-WAA-540',
+    movementType: 'BOM_ALLOCATION',
+    quantity: -185,
+    balanceAfter: 350,
+    referenceNumber: 'BOM-2026-001',
+    notes: 'Allocated for ABC Industries 100kW project',
+    timestamp: '2026-08-20T10:00:00Z',
+    performedBy: 'Amit Sharma'
+  },
+  {
+    id: 'sm-3',
+    productId: 'prod-3',
+    productName: 'Sungrow 110kW String Inverter SG110CX',
+    sku: 'INV-SUN-110',
+    movementType: 'PURCHASE_RECEIPT',
+    quantity: 2,
+    balanceAfter: 6,
+    referenceNumber: 'PO-2026-002',
+    notes: 'Received from Sungrow Power Supply India',
+    timestamp: '2026-08-20T17:00:00Z',
+    performedBy: 'Amit Sharma'
+  },
+  {
+    id: 'sm-4',
+    productId: 'prod-3',
+    productName: 'Sungrow 110kW String Inverter SG110CX',
+    sku: 'INV-SUN-110',
+    movementType: 'BOM_ALLOCATION',
+    quantity: -1,
+    balanceAfter: 5,
+    referenceNumber: 'BOM-2026-001',
+    notes: 'Allocated for ABC Industries 100kW project',
+    timestamp: '2026-08-22T11:00:00Z',
+    performedBy: 'Amit Sharma'
+  }
+];
+
 class StorageService {
   private get<T>(key: string, defaultValue: T): T {
     try {
@@ -2018,6 +2814,339 @@ class StorageService {
     this.set(STORAGE_KEYS.SETTINGS, settings);
   }
 
+  // ==========================================
+  // Products & Inventory Management
+  // ==========================================
+  getProducts(): ProductItem[] {
+    return this.get<ProductItem[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
+  }
+
+  saveProduct(product: ProductItem): void {
+    const products = this.getProducts();
+    const idx = products.findIndex(p => p.id === product.id);
+    if (idx >= 0) {
+      products[idx] = { ...product, updatedAt: new Date().toISOString() };
+    } else {
+      products.unshift({
+        ...product,
+        id: product.id || `prod-${Date.now()}`,
+        createdAt: product.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    }
+    this.set(STORAGE_KEYS.PRODUCTS, products);
+  }
+
+  deleteProduct(id: string): void {
+    const products = this.getProducts().filter(p => p.id !== id);
+    this.set(STORAGE_KEYS.PRODUCTS, products);
+  }
+
+  adjustStock(productId: string, newQty: number, reason: string, performedBy: string = 'Operations Team'): void {
+    const products = this.getProducts();
+    const prod = products.find(p => p.id === productId);
+    if (!prod) return;
+
+    const previousQty = prod.currentStock;
+    const diff = newQty - previousQty;
+    prod.currentStock = Math.max(0, newQty);
+    prod.updatedAt = new Date().toISOString();
+    this.set(STORAGE_KEYS.PRODUCTS, products);
+
+    this.addStockMovement({
+      productId: prod.id,
+      productName: prod.name,
+      sku: prod.sku,
+      movementType: 'ADJUSTMENT',
+      quantity: diff,
+      balanceAfter: prod.currentStock,
+      notes: reason || `Inventory count adjustment from ${previousQty} to ${newQty}`,
+      performedBy
+    });
+  }
+
+  // ==========================================
+  // Vendor Management
+  // ==========================================
+  getVendors(): Vendor[] {
+    return this.get<Vendor[]>(STORAGE_KEYS.VENDORS, initialVendors);
+  }
+
+  saveVendor(vendor: Vendor): void {
+    const vendors = this.getVendors();
+    const idx = vendors.findIndex(v => v.id === vendor.id);
+    if (idx >= 0) {
+      vendors[idx] = { ...vendor, updatedAt: new Date().toISOString() };
+    } else {
+      vendors.unshift({
+        ...vendor,
+        id: vendor.id || `vnd-${Date.now()}`,
+        createdAt: vendor.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    }
+    this.set(STORAGE_KEYS.VENDORS, vendors);
+  }
+
+  deleteVendor(id: string): void {
+    const vendors = this.getVendors().filter(v => v.id !== id);
+    this.set(STORAGE_KEYS.VENDORS, vendors);
+  }
+
+  // ==========================================
+  // Purchase Entry & Purchase Orders
+  // ==========================================
+  getPurchaseOrders(): PurchaseOrder[] {
+    return this.get<PurchaseOrder[]>(STORAGE_KEYS.PURCHASE_ORDERS, initialPurchaseOrders);
+  }
+
+  savePurchaseOrder(order: PurchaseOrder, autoSyncStock: boolean = true, performedBy: string = 'Purchase Manager'): void {
+    const orders = this.getPurchaseOrders();
+    const idx = orders.findIndex(o => o.id === order.id);
+    const existing = idx >= 0 ? orders[idx] : null;
+
+    let updatedOrder = { ...order, updatedAt: new Date().toISOString() };
+    if (!updatedOrder.id) {
+      updatedOrder.id = `po-${Date.now()}`;
+      updatedOrder.createdAt = new Date().toISOString();
+    }
+
+    // Check if status changed to RECEIVED and stock has not been updated yet
+    const shouldReceiveStock = autoSyncStock && updatedOrder.status === 'RECEIVED' && (!existing || !existing.stockUpdated);
+
+    if (shouldReceiveStock) {
+      const products = this.getProducts();
+      updatedOrder.items.forEach(item => {
+        let prod = products.find(p => p.id === item.productId || p.sku === item.sku);
+        if (prod) {
+          prod.currentStock += item.quantity;
+          prod.updatedAt = new Date().toISOString();
+          this.addStockMovement({
+            productId: prod.id,
+            productName: prod.name,
+            sku: prod.sku,
+            movementType: 'PURCHASE_RECEIPT',
+            quantity: item.quantity,
+            balanceAfter: prod.currentStock,
+            referenceId: updatedOrder.id,
+            referenceNumber: updatedOrder.purchaseNumber,
+            notes: `Goods Receipt from ${updatedOrder.vendorName}`,
+            performedBy
+          });
+        }
+      });
+      this.set(STORAGE_KEYS.PRODUCTS, products);
+      updatedOrder.stockUpdated = true;
+      updatedOrder.receivedDate = updatedOrder.receivedDate || new Date().toISOString().slice(0, 10);
+    }
+
+    if (idx >= 0) {
+      orders[idx] = updatedOrder;
+    } else {
+      orders.unshift(updatedOrder);
+    }
+    this.set(STORAGE_KEYS.PURCHASE_ORDERS, orders);
+  }
+
+  receivePurchaseOrder(id: string, performedBy: string = 'Store Incharge'): void {
+    const orders = this.getPurchaseOrders();
+    const order = orders.find(o => o.id === id);
+    if (!order) return;
+
+    order.status = 'RECEIVED';
+    order.receivedDate = new Date().toISOString().slice(0, 10);
+
+    if (!order.stockUpdated) {
+      const products = this.getProducts();
+      order.items.forEach(item => {
+        const prod = products.find(p => p.id === item.productId || p.sku === item.sku);
+        if (prod) {
+          prod.currentStock += item.quantity;
+          prod.updatedAt = new Date().toISOString();
+          this.addStockMovement({
+            productId: prod.id,
+            productName: prod.name,
+            sku: prod.sku,
+            movementType: 'PURCHASE_RECEIPT',
+            quantity: item.quantity,
+            balanceAfter: prod.currentStock,
+            referenceId: order.id,
+            referenceNumber: order.purchaseNumber,
+            notes: `Goods received against PO from ${order.vendorName}`,
+            performedBy
+          });
+        }
+      });
+      this.set(STORAGE_KEYS.PRODUCTS, products);
+      order.stockUpdated = true;
+    }
+
+    order.updatedAt = new Date().toISOString();
+    this.set(STORAGE_KEYS.PURCHASE_ORDERS, orders);
+  }
+
+  deletePurchaseOrder(id: string): void {
+    const orders = this.getPurchaseOrders().filter(o => o.id !== id);
+    this.set(STORAGE_KEYS.PURCHASE_ORDERS, orders);
+  }
+
+  // ==========================================
+  // Bill of Materials (BOM)
+  // ==========================================
+  getBOMs(): BillOfMaterials[] {
+    return this.get<BillOfMaterials[]>(STORAGE_KEYS.BOMS, initialBOMs);
+  }
+
+  saveBOM(bom: BillOfMaterials): void {
+    const boms = this.getBOMs();
+    const idx = boms.findIndex(b => b.id === bom.id);
+    if (idx >= 0) {
+      boms[idx] = { ...bom, updatedAt: new Date().toISOString() };
+    } else {
+      boms.unshift({
+        ...bom,
+        id: bom.id || `bom-${Date.now()}`,
+        createdAt: bom.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    }
+    this.set(STORAGE_KEYS.BOMS, boms);
+  }
+
+  allocateBOMStock(bomId: string, performedBy: string = 'Project Engineer'): boolean {
+    const boms = this.getBOMs();
+    const bom = boms.find(b => b.id === bomId);
+    if (!bom) return false;
+
+    const products = this.getProducts();
+    let hasUpdatedStock = false;
+
+    bom.items.forEach(item => {
+      const prod = products.find(p => p.id === item.productId || p.sku === item.sku);
+      if (prod && item.requiredQty > 0) {
+        const alloc = Math.min(item.requiredQty, prod.currentStock);
+        prod.currentStock = Math.max(0, prod.currentStock - item.requiredQty);
+        item.allocatedQty = item.requiredQty;
+        item.status = 'ALLOCATED';
+        hasUpdatedStock = true;
+
+        this.addStockMovement({
+          productId: prod.id,
+          productName: prod.name,
+          sku: prod.sku,
+          movementType: 'BOM_ALLOCATION',
+          quantity: -item.requiredQty,
+          balanceAfter: prod.currentStock,
+          referenceId: bom.id,
+          referenceNumber: bom.bomNumber,
+          notes: `BOM allocation for ${bom.projectTitle} (${bom.customerName})`,
+          performedBy
+        });
+      }
+    });
+
+    if (hasUpdatedStock) {
+      this.set(STORAGE_KEYS.PRODUCTS, products);
+      bom.stockAllocated = true;
+      if (bom.status === 'DRAFT') {
+        bom.status = 'APPROVED';
+      }
+      bom.updatedAt = new Date().toISOString();
+      this.set(STORAGE_KEYS.BOMS, boms);
+      return true;
+    }
+
+    return false;
+  }
+
+  deleteBOM(id: string): void {
+    const boms = this.getBOMs().filter(b => b.id !== id);
+    this.set(STORAGE_KEYS.BOMS, boms);
+  }
+
+  // ==========================================
+  // Sales Invoices
+  // ==========================================
+  getSalesInvoices(): SalesInvoice[] {
+    return this.get<SalesInvoice[]>(STORAGE_KEYS.SALES_INVOICES, initialSalesInvoices);
+  }
+
+  saveSalesInvoice(invoice: SalesInvoice, deductStockNow: boolean = false, performedBy: string = 'Accounts Officer'): void {
+    const invoices = this.getSalesInvoices();
+    const idx = invoices.findIndex(i => i.id === invoice.id);
+
+    let updated = { ...invoice, updatedAt: new Date().toISOString() };
+    if (!updated.id) {
+      updated.id = `inv-${Date.now()}`;
+      updated.createdAt = new Date().toISOString();
+    }
+
+    const shouldDeduct = (deductStockNow || updated.deductStock) && !updated.stockDeducted;
+
+    if (shouldDeduct) {
+      const products = this.getProducts();
+      let deductedAny = false;
+
+      updated.items.forEach(item => {
+        if (item.productId && item.quantity > 0) {
+          const prod = products.find(p => p.id === item.productId);
+          if (prod) {
+            prod.currentStock = Math.max(0, prod.currentStock - item.quantity);
+            prod.updatedAt = new Date().toISOString();
+            deductedAny = true;
+
+            this.addStockMovement({
+              productId: prod.id,
+              productName: prod.name,
+              sku: prod.sku,
+              movementType: 'INVOICE_SALE',
+              quantity: -item.quantity,
+              balanceAfter: prod.currentStock,
+              referenceId: updated.id,
+              referenceNumber: updated.invoiceNumber,
+              notes: `Dispatched to ${updated.customerName} via Invoice ${updated.invoiceNumber}`,
+              performedBy
+            });
+          }
+        }
+      });
+
+      if (deductedAny) {
+        this.set(STORAGE_KEYS.PRODUCTS, products);
+        updated.stockDeducted = true;
+      }
+    }
+
+    if (idx >= 0) {
+      invoices[idx] = updated;
+    } else {
+      invoices.unshift(updated);
+    }
+    this.set(STORAGE_KEYS.SALES_INVOICES, invoices);
+  }
+
+  deleteSalesInvoice(id: string): void {
+    const invoices = this.getSalesInvoices().filter(i => i.id !== id);
+    this.set(STORAGE_KEYS.SALES_INVOICES, invoices);
+  }
+
+  // ==========================================
+  // Stock Movements
+  // ==========================================
+  getStockMovements(): StockMovement[] {
+    return this.get<StockMovement[]>(STORAGE_KEYS.STOCK_MOVEMENTS, initialStockMovements);
+  }
+
+  addStockMovement(movement: Omit<StockMovement, 'id' | 'timestamp'>): void {
+    const movements = this.getStockMovements();
+    movements.unshift({
+      ...movement,
+      id: `sm-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      timestamp: new Date().toISOString()
+    });
+    this.set(STORAGE_KEYS.STOCK_MOVEMENTS, movements);
+  }
+
   // Reset demo data to default fresh state
   resetAllData(): void {
     localStorage.removeItem(STORAGE_KEYS.LEADS);
@@ -2028,12 +3157,19 @@ class StorageService {
     localStorage.removeItem(STORAGE_KEYS.EMPLOYEES);
     localStorage.removeItem(STORAGE_KEYS.ATTENDANCE);
     localStorage.removeItem(STORAGE_KEYS.PAYSLIPS);
+    localStorage.removeItem(STORAGE_KEYS.HOLIDAYS);
     localStorage.removeItem(STORAGE_KEYS.SERVICE_TICKETS);
     localStorage.removeItem(STORAGE_KEYS.AMC_CONTRACTS);
     localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
     localStorage.removeItem(STORAGE_KEYS.SETTINGS);
     localStorage.removeItem(STORAGE_KEYS.SURVEYS);
     localStorage.removeItem(STORAGE_KEYS.QUOTATIONS);
+    localStorage.removeItem(STORAGE_KEYS.PRODUCTS);
+    localStorage.removeItem(STORAGE_KEYS.VENDORS);
+    localStorage.removeItem(STORAGE_KEYS.PURCHASE_ORDERS);
+    localStorage.removeItem(STORAGE_KEYS.BOMS);
+    localStorage.removeItem(STORAGE_KEYS.SALES_INVOICES);
+    localStorage.removeItem(STORAGE_KEYS.STOCK_MOVEMENTS);
     window.location.reload();
   }
 }

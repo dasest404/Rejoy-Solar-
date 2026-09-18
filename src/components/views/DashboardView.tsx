@@ -33,14 +33,14 @@ import {
 } from 'recharts';
 
 export const DashboardView: React.FC = () => {
-  const { openCustomerControlCenter, setActiveView, setStageFilterKey, openImportExportModal } = useApp();
+  const { openCustomerControlCenter, setActiveView, setStageFilterKey, openImportExportModal, refreshTrigger } = useApp();
   const { currentUser, isCustomer } = useAuth();
 
-  const projects = useMemo(() => storageService.getProjects(), []);
-  const leads = useMemo(() => storageService.getLeads(), []);
-  const payments = useMemo(() => storageService.getPayments(), []);
-  const serviceTickets = useMemo(() => storageService.getServiceTickets(), []);
-  const activities = useMemo(() => storageService.getRecentActivities(8), []);
+  const projects = useMemo(() => storageService.getProjects(), [refreshTrigger]);
+  const leads = useMemo(() => storageService.getLeads(), [refreshTrigger]);
+  const payments = useMemo(() => storageService.getPayments(), [refreshTrigger]);
+  const serviceTickets = useMemo(() => storageService.getServiceTickets(), [refreshTrigger]);
+  const activities = useMemo(() => storageService.getRecentActivities(8), [refreshTrigger]);
 
   // Compute metrics
   const totalCapacityKw = projects.reduce((sum, p) => sum + p.capacityKw, 0);

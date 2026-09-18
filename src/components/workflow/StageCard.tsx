@@ -314,10 +314,20 @@ export const StageCard: React.FC<StageCardProps> = ({
               {stage.checklist.map((item, idx) => (
                 <div
                   key={`${item.id}-${idx}`}
+                  role="checkbox"
+                  aria-checked={item.completed}
                   onClick={() => handleToggleChecklist(item.id)}
                   className="p-3 flex items-start gap-3 hover:bg-slate-50 cursor-pointer transition-colors"
                 >
-                  <button className="mt-0.5 shrink-0 text-slate-400 hover:text-amber-600">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleChecklist(item.id);
+                    }}
+                    className="mt-0.5 shrink-0 text-slate-400 hover:text-amber-600 focus:outline-hidden"
+                    aria-label={`Toggle ${item.label || item.title}`}
+                  >
                     {item.completed ? (
                       <CheckSquare className="w-4 h-4 text-emerald-600" />
                     ) : (
@@ -330,7 +340,10 @@ export const StageCard: React.FC<StageCardProps> = ({
                     </span>
                     {item.completed && item.completedBy && (
                       <p className="text-[10px] text-slate-400 mt-0.5">
-                        Verified by {item.completedBy} at {new Date(item.completedAt || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        Verified by {item.completedBy}
+                        {item.completedAt && !isNaN(new Date(item.completedAt).getTime()) && (
+                          <> at {new Date(item.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</>
+                        )}
                       </p>
                     )}
                   </div>

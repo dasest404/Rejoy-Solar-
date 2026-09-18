@@ -11,6 +11,13 @@ export type AppView =
   | 'projects_all'
   | 'projects_stage_filtered'
   | 'customer_control_center'
+  | 'sales_purchase'
+  | 'sales_bom'
+  | 'sales_invoices'
+  | 'purchase_vendors'
+  | 'purchase_orders'
+  | 'inventory_products'
+  | 'inventory_stock'
   | 'finance'
   | 'hrms'
   | 'service'
@@ -204,11 +211,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const handleStorageUpdate = () => {
       setNotifications(storageService.getNotifications());
       setSettings(storageService.getSettings());
+      setRefreshTrigger(prev => prev + 1);
     };
 
     window.addEventListener('solarpulse_storage_updated', handleStorageUpdate);
     return () => window.removeEventListener('solarpulse_storage_updated', handleStorageUpdate);
-  }, [refreshTrigger]);
+  }, []);
 
   const openCustomerControlCenter = (customerId: string, projectId?: string) => {
     setSelectedCustomerId(customerId);

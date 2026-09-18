@@ -21,10 +21,10 @@ import {
 } from 'lucide-react';
 
 export const CustomerPortalView: React.FC = () => {
-  const { openCustomerControlCenter, setActiveView, showToast } = useApp();
+  const { openCustomerControlCenter, setActiveView, showToast, refreshTrigger } = useApp();
   const { currentUser } = useAuth();
 
-  const projects = useMemo(() => storageService.getProjects(), []);
+  const projects = useMemo(() => storageService.getProjects(), [refreshTrigger]);
   const myProject = projects[0]; // ABC Industries 100 kW
 
   const completedStagesCount = myProject.stages.filter(s => s.status === 'COMPLETED').length;

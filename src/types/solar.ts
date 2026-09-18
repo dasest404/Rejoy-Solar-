@@ -532,3 +532,217 @@ export interface SystemSettings {
   whatsAppPhoneNumberId?: string;
   whatsAppPhoneId?: string;
 }
+
+// ==========================================
+// Sales & Purchase Module Data Models
+// ==========================================
+
+export type ProductCategory =
+  | 'Solar Panels'
+  | 'Inverters'
+  | 'Mounting Structures'
+  | 'Electrical & Cables'
+  | 'Civil & Fasteners'
+  | 'Safety & Accessories'
+  | 'Monitoring & Sensors'
+  | 'General'
+  | 'Other';
+
+export type ProductUnit = 'NOS' | 'SETS' | 'METERS' | 'KG' | 'ROLLS' | 'PACKS';
+
+export interface ProductItem {
+  id: string;
+  sku: string;
+  name: string;
+  category: ProductCategory;
+  brand: string;
+  specification: string;
+  unit: ProductUnit;
+  hsnCode: string;
+  unitPrice: number; // Standard purchase cost (₹)
+  sellingPrice: number; // Standard sales price (₹)
+  currentStock: number;
+  minStockThreshold: number;
+  location: string;
+  preferredVendorId?: string;
+  preferredVendorName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type VendorCategory =
+  | 'Solar Modules'
+  | 'Inverters'
+  | 'Structures'
+  | 'Cables & Switchgear'
+  | 'Civil Materials'
+  | 'Civil & Mechanical'
+  | 'Logistics & Equipment'
+  | 'Logistics & Services'
+  | 'Other';
+
+export interface Vendor {
+  id: string;
+  vendorCode: string;
+  name: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  category: VendorCategory;
+  gstNumber: string;
+  address: string;
+  city: string;
+  state: string;
+  bankDetails?: {
+    bankName: string;
+    accountNo: string;
+    ifsc: string;
+  };
+  paymentTerms: string;
+  rating: number; // 1-5
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PurchaseItem {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  category: ProductCategory;
+  quantity: number;
+  unit: ProductUnit;
+  unitPrice: number;
+  taxRatePercent: number;
+  taxAmount: number;
+  totalPrice: number;
+}
+
+export type PurchaseOrderItem = PurchaseItem;
+
+export type PurchaseStatus = 'DRAFT' | 'ORDERED' | 'RECEIVED' | 'CANCELLED';
+
+export interface PurchaseOrder {
+  id: string;
+  purchaseNumber: string;
+  vendorId: string;
+  vendorName: string;
+  purchaseDate: string;
+  expectedDeliveryDate?: string;
+  receivedDate?: string;
+  projectId?: string;
+  projectTitle?: string;
+  items: PurchaseItem[];
+  subtotal: number;
+  taxAmount: number;
+  totalAmount: number;
+  status: PurchaseStatus;
+  paymentStatus: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID';
+  paymentDueDate?: string;
+  invoiceReference?: string;
+  notes?: string;
+  stockUpdated: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BOMStatus = 'DRAFT' | 'APPROVED' | 'RELEASED_TO_SITE' | 'COMPLETED';
+
+export interface BOMItem {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  category: ProductCategory;
+  requiredQty: number;
+  allocatedQty: number;
+  unit: ProductUnit;
+  estimatedUnitCost: number;
+  totalCost: number;
+  status: 'PENDING' | 'ALLOCATED' | 'DISPATCHED' | 'INSTALLED';
+}
+
+export interface BillOfMaterials {
+  id: string;
+  bomNumber: string;
+  projectId: string;
+  projectCode: string;
+  projectTitle: string;
+  customerName: string;
+  capacityKw: number;
+  version: string;
+  items: BOMItem[];
+  totalCost: number;
+  status: BOMStatus;
+  createdBy: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  notes?: string;
+  stockAllocated: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type InvoiceStatus = 'DRAFT' | 'ISSUED' | 'PAID' | 'CANCELLED';
+
+export interface InvoiceLineItem {
+  id: string;
+  productId?: string;
+  description: string;
+  hsnCode: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  taxRatePercent: number;
+  taxAmount: number;
+  totalAmount: number;
+}
+
+export interface SalesInvoice {
+  id: string;
+  invoiceNumber: string;
+  invoiceType: 'TAX_INVOICE' | 'PROFORMA' | 'MILESTONE_INVOICE';
+  customerId: string;
+  customerName: string;
+  customerGst?: string;
+  customerAddress: string;
+  projectId: string;
+  projectTitle: string;
+  invoiceDate: string;
+  dueDate: string;
+  items: InvoiceLineItem[];
+  subtotal: number;
+  taxAmount: number;
+  totalAmount: number;
+  status: InvoiceStatus;
+  paymentTerms: string;
+  notes?: string;
+  deductStock: boolean;
+  stockDeducted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type StockMovementType =
+  | 'PURCHASE_RECEIPT'
+  | 'BOM_ALLOCATION'
+  | 'BOM_DISPATCH'
+  | 'INVOICE_SALE'
+  | 'ADJUSTMENT'
+  | 'RETURN';
+
+export interface StockMovement {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  movementType: StockMovementType;
+  quantity: number; // positive (inflow) or negative (outflow)
+  balanceAfter: number;
+  referenceId?: string;
+  referenceNumber?: string;
+  notes?: string;
+  timestamp: string;
+  performedBy: string;
+}

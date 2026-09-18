@@ -22,10 +22,10 @@ import {
 } from 'recharts';
 
 export const ReportsView: React.FC = () => {
-  const { showToast } = useApp();
-  const projects = useMemo(() => storageService.getProjects(), []);
-  const payments = useMemo(() => storageService.getPayments(), []);
-  const expenses = useMemo(() => storageService.getExpenses(), []);
+  const { showToast, refreshTrigger } = useApp();
+  const projects = useMemo(() => storageService.getProjects(), [refreshTrigger]);
+  const payments = useMemo(() => storageService.getPayments(), [refreshTrigger]);
+  const expenses = useMemo(() => storageService.getExpenses(), [refreshTrigger]);
 
   const totalCapacity = projects.reduce((s, p) => s + p.capacityKw, 0);
   const totalValue = projects.reduce((s, p) => s + p.totalValue, 0);

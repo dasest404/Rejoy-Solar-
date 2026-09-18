@@ -18,7 +18,8 @@ import {
   Sparkles,
   ExternalLink,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  ShoppingCart
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -31,6 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
   const { currentUser, isCustomer, canAccessModule } = useAuth();
 
   const [crmOpen, setCrmOpen] = useState(true);
+  const [salesPurchaseOpen, setSalesPurchaseOpen] = useState(true);
   const [projectsOpen, setProjectsOpen] = useState(true);
 
   const navigateTo = (view: AppView, stageKey?: string) => {
@@ -165,6 +167,94 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
                         className={subNavItemClass(activeView === 'crm_quotations')}
                       >
                         <span>Quotations & Proposals</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Sales & Purchase Section */}
+              {canAccessModule('sales_purchase') && (
+                <div className="space-y-1">
+                  <div
+                    onClick={() => {
+                      navigateTo('sales_purchase');
+                      setSalesPurchaseOpen(true);
+                    }}
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                      [
+                        'sales_purchase',
+                        'sales_bom',
+                        'sales_invoices',
+                        'purchase_vendors',
+                        'purchase_orders',
+                        'inventory_products',
+                        'inventory_stock'
+                      ].includes(activeView)
+                        ? 'bg-amber-500/10 text-amber-900 border border-amber-300/60'
+                        : 'text-slate-700 hover:bg-slate-100/70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShoppingCart className="w-4 h-4 text-amber-500" />
+                      <span>Sales & Purchase</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSalesPurchaseOpen(!salesPurchaseOpen);
+                      }}
+                      className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                      aria-label="Toggle Sales & Purchase menu"
+                    >
+                      {salesPurchaseOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+
+                  {salesPurchaseOpen && (
+                    <div className="space-y-0.5 pl-2 border-l border-amber-200/80 ml-3">
+                      <button
+                        onClick={() => navigateTo('sales_purchase')}
+                        className={subNavItemClass(activeView === 'sales_purchase')}
+                      >
+                        <span>Hub & Synchronization</span>
+                      </button>
+                      <button
+                        onClick={() => navigateTo('sales_bom')}
+                        className={subNavItemClass(activeView === 'sales_bom')}
+                      >
+                        <span>Bill of Materials (BOM)</span>
+                      </button>
+                      <button
+                        onClick={() => navigateTo('sales_invoices')}
+                        className={subNavItemClass(activeView === 'sales_invoices')}
+                      >
+                        <span>Invoice Creation</span>
+                      </button>
+                      <button
+                        onClick={() => navigateTo('purchase_vendors')}
+                        className={subNavItemClass(activeView === 'purchase_vendors')}
+                      >
+                        <span>Vendor Management</span>
+                      </button>
+                      <button
+                        onClick={() => navigateTo('purchase_orders')}
+                        className={subNavItemClass(activeView === 'purchase_orders')}
+                      >
+                        <span>Purchase Entry</span>
+                      </button>
+                      <button
+                        onClick={() => navigateTo('inventory_products')}
+                        className={subNavItemClass(activeView === 'inventory_products')}
+                      >
+                        <span>Purchased Products</span>
+                      </button>
+                      <button
+                        onClick={() => navigateTo('inventory_stock')}
+                        className={subNavItemClass(activeView === 'inventory_stock')}
+                      >
+                        <span>Inventory & Stock</span>
                       </button>
                     </div>
                   )}

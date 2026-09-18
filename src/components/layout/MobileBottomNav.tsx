@@ -7,7 +7,8 @@ import {
   SunMedium,
   Layers,
   CreditCard,
-  Wrench
+  Wrench,
+  ShoppingCart
 } from 'lucide-react';
 
 export const MobileBottomNav: React.FC = () => {
@@ -63,6 +64,14 @@ export const MobileBottomNav: React.FC = () => {
       >
         <Users className="w-5 h-5 mb-0.5" />
         <span>Leads</span>
+      </button>
+
+      <button
+        onClick={() => setActiveView('sales_purchase')}
+        className={buttonClass(activeView.startsWith('sales_') || activeView.startsWith('purchase_') || activeView.startsWith('inventory_') || activeView === 'sales_purchase')}
+      >
+        <ShoppingCart className="w-5 h-5 mb-0.5" />
+        <span>Sales/PO</span>
       </button>
 
       {/* Prominent Center button for Customer Control Center */}

@@ -402,6 +402,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       case 'leads':
       case 'quotations':
         return ['Sales Manager', 'Sales Executive', 'Project Manager'].includes(currentRole);
+      case 'sales_purchase':
+      case 'sales':
+      case 'purchase':
+      case 'inventory':
+      case 'bom':
+      case 'vendors':
+        return !isCustomer;
       case 'customers':
       case 'projects':
       case 'workflow':

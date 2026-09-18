@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { storageService } from '../../services/storage';
@@ -39,7 +39,8 @@ export const CustomerControlCenterView: React.FC = () => {
     openWhatsAppModal,
     showToast,
     settings,
-    triggerRefresh
+    triggerRefresh,
+    refreshTrigger
   } = useApp();
   const { currentUser, isCustomer } = useAuth();
 
@@ -47,9 +48,25 @@ export const CustomerControlCenterView: React.FC = () => {
   const [expandedStageKey, setExpandedStageKey] = useState<string | null>('panel_installation');
   const [tallySyncingId, setTallySyncingId] = useState<string | null>(null);
   const [activeXmlModal, setActiveXmlModal] = useState<string | null>(null);
+  const [localUpdateCounter, setLocalUpdateCounter] = useState(0);
 
-  const customers = useMemo(() => storageService.getCustomers(), []);
-  const projects = useMemo(() => storageService.getProjects(), []);
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      setLocalUpdateCounter(prev => prev + 1);
+    };
+    window.addEventListener('solarpulse_storage_updated', handleStorageUpdate);
+    return () => {
+      window.removeEventListener('solarpulse_storage_updated', handleStorageUpdate);
+    };
+  }, []);
+
+  const customers = useMemo(() => {
+    return storageService.getCustomers();
+  }, [refreshTrigger, localUpdateCounter]);
+
+  const projects = useMemo(() => {
+    return storageService.getProjects();
+  }, [refreshTrigger, localUpdateCounter]);
 
   // Determine active customer and project
   const currentCustomer = useMemo(() => {
@@ -67,7 +84,7 @@ export const CustomerControlCenterView: React.FC = () => {
   // Project financials
   const payments = useMemo(() => {
     return storageService.getPayments().filter(p => p.projectId === currentProject.id);
-  }, [currentProject.id]);
+  }, [currentProject.id, refreshTrigger, localUpdateCounter]);
 
   const totalCollected = payments
     .filter(p => p.status === 'PAID')
@@ -104,6 +121,7 @@ export const CustomerControlCenterView: React.FC = () => {
       currentUser.name,
       currentUser.role
     );
+    setLocalUpdateCounter(prev => prev + 1);
     triggerRefresh();
   };
 

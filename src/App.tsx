@@ -23,6 +23,7 @@ const ServiceView = React.lazy(() => import('./components/views/ServiceView').th
 const ReportsView = React.lazy(() => import('./components/views/ReportsView').then(m => ({ default: m.ReportsView })));
 const SettingsView = React.lazy(() => import('./components/views/SettingsView').then(m => ({ default: m.SettingsView })));
 const CustomerPortalView = React.lazy(() => import('./components/views/CustomerPortalView').then(m => ({ default: m.CustomerPortalView })));
+const SalesPurchaseView = React.lazy(() => import('./components/views/SalesPurchaseView').then(m => ({ default: m.SalesPurchaseView })));
 
 const ViewLoader: React.FC = () => (
   <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-400 gap-3">
@@ -68,6 +69,14 @@ const MainLayout: React.FC = () => {
         return <SettingsView />;
       case 'customer_portal':
         return <CustomerPortalView />;
+      case 'sales_purchase':
+      case 'sales_bom':
+      case 'sales_invoices':
+      case 'purchase_vendors':
+      case 'purchase_orders':
+      case 'inventory_products':
+      case 'inventory_stock':
+        return <SalesPurchaseView />;
       default:
         return <DashboardView />;
     }
