@@ -7,6 +7,9 @@ import {
   ExpenseRecord,
   Employee,
   AttendanceRecord,
+  Payslip,
+  HolidayRecord,
+  HolidayType,
   ServiceTicket,
   AMCContract,
   AppNotification,
@@ -27,6 +30,8 @@ const STORAGE_KEYS = {
   EXPENSES: 'solar_erp_expenses_v2',
   EMPLOYEES: 'solar_erp_employees_v2',
   ATTENDANCE: 'solar_erp_attendance_v2',
+  PAYSLIPS: 'solar_erp_payslips_v2',
+  HOLIDAYS: 'solar_erp_holidays_v2',
   SERVICE_TICKETS: 'solar_erp_service_tickets_v2',
   AMC_CONTRACTS: 'solar_erp_amc_contracts_v2',
   NOTIFICATIONS: 'solar_erp_notifications_v2',
@@ -730,6 +735,313 @@ const initialAttendance: AttendanceRecord[] = [
     date: '2026-09-07',
     checkInTime: '09:10 AM',
     status: 'PRESENT'
+  }
+];
+
+const initialPayslips: Payslip[] = [
+  {
+    id: 'pay-202609-emp-3',
+    payslipNumber: 'PAY-202609-EMP003',
+    employeeId: 'emp-3',
+    employeeCode: 'EMP003',
+    employeeName: 'Rajesh Kumar',
+    department: 'Engineering',
+    designation: 'Project Engineer & Commissioning Specialist',
+    month: 'September 2026',
+    generatedDate: '2026-09-08',
+    baseSalary: 55000,
+    overtimeType: 'CALCULATED',
+    overtimeHours: 14,
+    overtimeRatePerHour: 300,
+    overtimeAmount: 4200,
+    additionalExpenses: [
+      { id: 'exp-1', description: 'Sanand Site Commute & Fuel Allowance', amount: 2500 },
+      { id: 'exp-2', description: 'HT Substation Tools & PPE Reimbursement', amount: 1800 }
+    ],
+    totalAdditionalExpenses: 4300,
+    deductions: [
+      { id: 'ded-1', description: 'Provident Fund (PF Employee Share)', amount: 1800 },
+      { id: 'ded-2', description: 'TDS Withholding Tax', amount: 2500 }
+    ],
+    totalDeductions: 4300,
+    grossEarnings: 63500,
+    netPay: 59200,
+    status: 'GENERATED',
+    paymentMode: 'NEFT/RTGS Bank Transfer',
+    bankReferenceNo: 'HDFC26090888910'
+  },
+  {
+    id: 'pay-202609-emp-8',
+    payslipNumber: 'PAY-202609-EMP008',
+    employeeId: 'emp-8',
+    employeeCode: 'EMP008',
+    employeeName: 'Ankit Joshi',
+    department: 'Electrical',
+    designation: 'Senior Electrical Engineer (LT/HT)',
+    month: 'September 2026',
+    generatedDate: '2026-09-05',
+    baseSalary: 62000,
+    overtimeType: 'DIRECT',
+    overtimeAmount: 6000,
+    additionalExpenses: [
+      { id: 'exp-3', description: 'Morbi Industrial Field Travel Allowance', amount: 3500 },
+      { id: 'exp-4', description: 'Food & Outstation Lodging Allowance', amount: 2200 }
+    ],
+    totalAdditionalExpenses: 5700,
+    deductions: [
+      { id: 'ded-3', description: 'PF Statutory Contribution', amount: 2100 },
+      { id: 'ded-4', description: 'Professional Tax (Gujarat)', amount: 200 }
+    ],
+    totalDeductions: 2300,
+    grossEarnings: 73700,
+    netPay: 71400,
+    status: 'PAID',
+    paymentDate: '2026-09-07',
+    paymentMode: 'NEFT/RTGS Bank Transfer',
+    bankReferenceNo: 'ICIC26090712390'
+  }
+];
+
+const initialHolidays: HolidayRecord[] = [
+  {
+    id: 'hol-1',
+    name: 'Republic Day',
+    date: '2026-01-26',
+    type: 'NATIONAL',
+    description: 'Celebration of the Constitution of India coming into effect. Mandatory national paid holiday.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-2',
+    name: 'Holi (Dhulandi)',
+    date: '2026-03-03',
+    type: 'FESTIVAL',
+    description: 'Festival of colors and arrival of spring. Closed for all corporate offices and installation sites.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-3',
+    name: 'Eid-ul-Fitr',
+    date: '2026-03-20',
+    type: 'FESTIVAL',
+    description: 'Islamic festival marking the culmination of Ramadan holy month. Subject to moon sighting.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-4',
+    name: 'Good Friday',
+    date: '2026-04-03',
+    type: 'FESTIVAL',
+    description: 'Christian holy day commemorating the crucifixion of Jesus Christ.',
+    isOptional: true,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-5',
+    name: 'Dr. B.R. Ambedkar Jayanti',
+    date: '2026-04-14',
+    type: 'NATIONAL',
+    description: 'Birth anniversary of Dr. Bhimrao Ramji Ambedkar, father of the Indian Constitution.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-6',
+    name: 'Gujarat Gaurav Din / Labour Day',
+    date: '2026-05-01',
+    type: 'REGIONAL',
+    description: 'Gujarat State Foundation Day & International Workers Day recognition.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-7',
+    name: 'Bakrid (Eid-ul-Adha)',
+    date: '2026-05-27',
+    type: 'FESTIVAL',
+    description: 'Feast of the Sacrifice. Floating optional holiday for eligible workforce.',
+    isOptional: true,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-8',
+    name: 'World Environment & Solar Day',
+    date: '2026-06-05',
+    type: 'COMPANY',
+    description: 'SolarPulse special corporate day honoring green solar energy innovation, clean tech, and team sustainability.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-9',
+    name: 'Independence Day',
+    date: '2026-08-15',
+    type: 'NATIONAL',
+    description: 'India Independence Day flag hoisting ceremony followed by holiday.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-10',
+    name: 'Raksha Bandhan',
+    date: '2026-08-28',
+    type: 'FESTIVAL',
+    description: 'Celebration of bond between brothers and sisters. Optional holiday.',
+    isOptional: true,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-11',
+    name: 'Janmashtami (Lord Krishna Birth)',
+    date: '2026-09-04',
+    type: 'FESTIVAL',
+    description: 'Celebration of the birth of Lord Krishna. Official holiday across Western India operations.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-12',
+    name: 'Ganesh Chaturthi',
+    date: '2026-09-14',
+    type: 'FESTIVAL',
+    description: 'Vinayaka Chaturthi celebration & office sthapana pooja.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-13',
+    name: 'Mahatma Gandhi Jayanti',
+    date: '2026-10-02',
+    type: 'NATIONAL',
+    description: 'Birth anniversary of Mahatma Gandhi. Mandatory national public holiday.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-14',
+    name: 'Dussehra (Vijayadashami)',
+    date: '2026-10-20',
+    type: 'FESTIVAL',
+    description: 'Triumph of light over darkness. Closed for all offices and manufacturing yards.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-15',
+    name: 'SolarPulse Annual Foundation Day',
+    date: '2026-11-01',
+    type: 'COMPANY',
+    description: 'SolarPulse Corporate Foundation Day and Annual Employee Excellence Awards celebration.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-16',
+    name: 'Diwali (Deepavali & Lakshmi Puja)',
+    date: '2026-11-08',
+    type: 'FESTIVAL',
+    description: 'Grand festival of lights. Mandatory paid holiday for all corporate, project, and warehouse units.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-17',
+    name: 'Gujarati New Year (Bestu Varas)',
+    date: '2026-11-09',
+    type: 'REGIONAL',
+    description: 'Vikram Samvat 2083 New Year celebrations and chopda pujan across Gujarat branches.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-18',
+    name: 'Bhai Dooj',
+    date: '2026-11-10',
+    type: 'FESTIVAL',
+    description: 'Celebration of brotherly bond after Diwali. Optional holiday.',
+    isOptional: true,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-19',
+    name: 'Guru Nanak Jayanti',
+    date: '2026-11-24',
+    type: 'FESTIVAL',
+    description: 'Gurpurab celebrating the birth of Guru Nanak Dev Ji. Optional floating leave.',
+    isOptional: true,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
+  },
+  {
+    id: 'hol-20',
+    name: 'Christmas Day',
+    date: '2026-12-25',
+    type: 'FESTIVAL',
+    description: 'Christmas celebration and year-end shutdown period begins.',
+    isOptional: false,
+    applicableDepartments: ['All Departments'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdBy: 'HR Department'
   }
 ];
 
@@ -1461,15 +1773,82 @@ class StorageService {
     this.set(STORAGE_KEYS.EMPLOYEES, employees);
   }
 
+  deleteEmployee(id: string): void {
+    const employees = this.getEmployees().filter(e => e.id !== id);
+    this.set(STORAGE_KEYS.EMPLOYEES, employees);
+  }
+
   // --- Attendance ---
   getAttendance(): AttendanceRecord[] {
     return this.get<AttendanceRecord[]>(STORAGE_KEYS.ATTENDANCE, initialAttendance);
   }
 
-  recordAttendance(record: AttendanceRecord): void {
+  saveAttendanceRecord(record: AttendanceRecord): void {
     const attendance = this.getAttendance();
-    attendance.unshift(record);
+    const index = attendance.findIndex(a => a.id === record.id);
+    if (index >= 0) {
+      attendance[index] = record;
+    } else {
+      attendance.unshift(record);
+    }
     this.set(STORAGE_KEYS.ATTENDANCE, attendance);
+  }
+
+  recordAttendance(record: AttendanceRecord): void {
+    this.saveAttendanceRecord(record);
+  }
+
+  deleteAttendanceRecord(id: string): void {
+    const attendance = this.getAttendance().filter(a => a.id !== id);
+    this.set(STORAGE_KEYS.ATTENDANCE, attendance);
+  }
+
+  // --- Payroll / Payslips ---
+  getPayslips(): Payslip[] {
+    return this.get<Payslip[]>(STORAGE_KEYS.PAYSLIPS, initialPayslips);
+  }
+
+  savePayslip(payslip: Payslip): void {
+    const payslips = this.getPayslips();
+    const index = payslips.findIndex(p => p.id === payslip.id);
+    if (index >= 0) {
+      payslips[index] = payslip;
+    } else {
+      payslips.unshift(payslip);
+    }
+    this.set(STORAGE_KEYS.PAYSLIPS, payslips);
+  }
+
+  deletePayslip(id: string): void {
+    const payslips = this.getPayslips().filter(p => p.id !== id);
+    this.set(STORAGE_KEYS.PAYSLIPS, payslips);
+  }
+
+  // --- Holidays ---
+  getHolidays(): HolidayRecord[] {
+    return this.get<HolidayRecord[]>(STORAGE_KEYS.HOLIDAYS, initialHolidays);
+  }
+
+  saveHoliday(holiday: HolidayRecord): void {
+    const holidays = this.getHolidays();
+    const index = holidays.findIndex(h => h.id === holiday.id);
+    if (index >= 0) {
+      holidays[index] = holiday;
+    } else {
+      holidays.push(holiday);
+    }
+    // Sort by date ascending
+    holidays.sort((a, b) => a.date.localeCompare(b.date));
+    this.set(STORAGE_KEYS.HOLIDAYS, holidays);
+  }
+
+  deleteHoliday(id: string): void {
+    const holidays = this.getHolidays().filter(h => h.id !== id);
+    this.set(STORAGE_KEYS.HOLIDAYS, holidays);
+  }
+
+  resetStandardHolidays(): void {
+    this.set(STORAGE_KEYS.HOLIDAYS, initialHolidays);
   }
 
   // --- Service & AMC ---
@@ -1648,6 +2027,7 @@ class StorageService {
     localStorage.removeItem(STORAGE_KEYS.EXPENSES);
     localStorage.removeItem(STORAGE_KEYS.EMPLOYEES);
     localStorage.removeItem(STORAGE_KEYS.ATTENDANCE);
+    localStorage.removeItem(STORAGE_KEYS.PAYSLIPS);
     localStorage.removeItem(STORAGE_KEYS.SERVICE_TICKETS);
     localStorage.removeItem(STORAGE_KEYS.AMC_CONTRACTS);
     localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);

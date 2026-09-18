@@ -1,0 +1,942 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Employee, Payslip, AdditionalExpenseItem, DeductionItem } from '../../types/solar';
+import {
+  X,
+  FileText,
+  Save,
+  Plus,
+  Trash2,
+  Lock,
+  Clock,
+  Receipt,
+  MinusCircle,
+  AlertCircle,
+  Sparkles,
+  Calculator,
+  Calendar,
+  Building,
+  Briefcase,
+  DollarSign,
+  CheckCircle2
+} from 'lucide-react';
+
+interface PayslipGeneratorModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (payslip: Payslip) => void;
+  employee: Employee | null;
+  existingPayslip?: Payslip | null;
+  allEmployees: Employee[];
+}
+
+const COMMON_EXPENSE_PRESETS = [
+  'Sanand Site Allowance',
+  'Travel & Fuel Reimbursement',
+  'Food & Outstation Allowance',
+  'Tools & PPE Safety Reimbursement',
+  'Mobile & Internet Reimbursement',
+  'Field Performance Incentive'
+];
+
+const COMMON_DEDUCTION_PRESETS = [
+  'Provident Fund (PF Employee)',
+  'TDS Income Tax Withholding',
+  'Professional Tax (PT)',
+  'Advance Salary Recovery',
+  'Unpaid Leave Deduction',
+  'Loan Recovery'
+];
+
+const MONTH_OPTIONS = [
+  'September 2026',
+  'October 2026',
+  'August 2026',
+  'July 2026',
+  'June 2026',
+  'May 2026'
+];
+
+export const PayslipGeneratorModal: React.FC<PayslipGeneratorModalProps> = ({
+  isOpen,
+  onClose,
+  onSave,
+  employee: initialEmployee,
+  existingPayslip,
+  allEmployees
+}) => {
+  const isEditing = Boolean(existingPayslip);
+
+  // Selected employee state (in case user opened modal directly)
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>(
+    initialEmployee?.id || existingPayslip?.employeeId || allEmployees[0]?.id || ''
+  );
+
+  const currentEmployee = useMemo(() => {
+    return allEmployees.find(e => e.id === selectedEmployeeId) || initialEmployee || allEmployees[0];
+  }, [allEmployees, selectedEmployeeId, initialEmployee]);
+
+  // Form states
+  const [salaryMonth, setSalaryMonth] = useState<string>('September 2026');
+  const [status, setStatus] = useState<Payslip['status']>('GENERATED');
+  const [paymentMode, setPaymentMode] = useState<Payslip['paymentMode']>('NEFT/RTGS Bank Transfer');
+  const [bankReferenceNo, setBankReferenceNo] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
+
+  // Overtime states
+  const [overtimeType, setOvertimeType] = useState<'CALCULATED' | 'DIRECT'>('CALCULATED');
+  const [overtimeHours, setOvertimeHours] = useState<number>(0);
+  const [overtimeRatePerHour, setOvertimeRatePerHour] = useState<number>(0);
+  const [directOvertimeAmount, setDirectOvertimeAmount] = useState<number>(0);
+
+  // Additional expenses
+  const [additionalExpenses, setAdditionalExpenses] = useState<AdditionalExpenseItem[]>([]);
+
+  // Deductions
+  const [deductions, setDeductions] = useState<DeductionItem[]>([]);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Suggested default hourly rate based on base salary: base / 26 working days / 8 hours
+  const suggestedHourlyRate = useMemo(() => {
+    if (!currentEmployee) return 200;
+    const rate = Math.round(currentEmployee.salaryMonthly / (26 * 8));
+    return Math.max(rate, 100);
+  }, [currentEmployee]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (existingPayslip) {
+      setSelectedEmployeeId(existingPayslip.employeeId);
+      setSalaryMonth(existingPayslip.month || 'September 2026');
+      setStatus(existingPayslip.status || 'GENERATED');
+      setPaymentMode(existingPayslip.paymentMode || 'NEFT/RTGS Bank Transfer');
+      setBankReferenceNo(existingPayslip.bankReferenceNo || '');
+      setNotes(existingPayslip.notes || '');
+
+      setOvertimeType(existingPayslip.overtimeType || 'CALCULATED');
+      setOvertimeHours(existingPayslip.overtimeHours ?? 0);
+      setOvertimeRatePerHour(existingPayslip.overtimeRatePerHour ?? suggestedHourlyRate);
+      setDirectOvertimeAmount(existingPayslip.overtimeAmount ?? 0);
+
+      setAdditionalExpenses(
+        existingPayslip.additionalExpenses && existingPayslip.additionalExpenses.length > 0
+          ? [...existingPayslip.additionalExpenses]
+          : []
+      );
+
+      setDeductions(
+        existingPayslip.deductions && existingPayslip.deductions.length > 0
+          ? [...existingPayslip.deductions]
+          : []
+      );
+    } else {
+      const emp = initialEmployee || allEmployees[0];
+      if (emp) {
+        setSelectedEmployeeId(emp.id);
+      }
+      setSalaryMonth('September 2026');
+      setStatus('GENERATED');
+      setPaymentMode('NEFT/RTGS Bank Transfer');
+      setBankReferenceNo('');
+      setNotes('');
+
+      setOvertimeType('CALCULATED');
+      setOvertimeHours(0);
+      setOvertimeRatePerHour(suggestedHourlyRate);
+      setDirectOvertimeAmount(0);
+
+      // Clean empty rows by default or 1 starter row
+      setAdditionalExpenses([]);
+      setDeductions([
+        { id: `ded-${Date.now()}-1`, description: 'Provident Fund (PF Employee)', amount: 1800 }
+      ]);
+    }
+    setErrors({});
+  }, [isOpen, existingPayslip, initialEmployee, allEmployees, suggestedHourlyRate]);
+
+  // Real-time calculations:
+  // Base salary is FIXED and strictly read from currentEmployee.salaryMonthly
+  const fixedBaseSalary = currentEmployee ? currentEmployee.salaryMonthly : 0;
+
+  const effectiveOvertimeSalary =
+    overtimeType === 'CALCULATED'
+      ? Math.round((Number(overtimeHours) || 0) * (Number(overtimeRatePerHour) || 0))
+      : Math.round(Number(directOvertimeAmount) || 0);
+
+  const totalAdditionalExpenses = additionalExpenses.reduce(
+    (sum, item) => sum + (Number(item.amount) || 0),
+    0
+  );
+
+  const totalDeductions = deductions.reduce(
+    (sum, item) => sum + (Number(item.amount) || 0),
+    0
+  );
+
+  // Transparent calculation rules:
+  // Gross Earnings = Fixed Base Salary + Overtime Salary + Total Additional Expenses
+  // Net Pay = Gross Earnings - Total Deductions
+  const grossEarnings = fixedBaseSalary + effectiveOvertimeSalary + totalAdditionalExpenses;
+  const netPay = Math.max(0, grossEarnings - totalDeductions);
+
+  if (!isOpen || !currentEmployee) return null;
+
+  // Handlers for Additional Expenses
+  const handleAddExpense = (presetDesc?: string) => {
+    setAdditionalExpenses(prev => [
+      ...prev,
+      {
+        id: `exp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        description: presetDesc || '',
+        amount: 0
+      }
+    ]);
+  };
+
+  const handleUpdateExpense = (id: string, field: 'description' | 'amount', value: string | number) => {
+    setAdditionalExpenses(prev =>
+      prev.map(item => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const handleRemoveExpense = (id: string) => {
+    setAdditionalExpenses(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Handlers for Deductions
+  const handleAddDeduction = (presetDesc?: string) => {
+    setDeductions(prev => [
+      ...prev,
+      {
+        id: `ded-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        description: presetDesc || '',
+        amount: 0
+      }
+    ]);
+  };
+
+  const handleUpdateDeduction = (id: string, field: 'description' | 'amount', value: string | number) => {
+    setDeductions(prev =>
+      prev.map(item => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const handleRemoveDeduction = (id: string) => {
+    setDeductions(prev => prev.filter(item => item.id !== id));
+  };
+
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!salaryMonth.trim()) {
+      newErrors.salaryMonth = 'Salary period / month is required.';
+    }
+
+    if (overtimeType === 'CALCULATED') {
+      if (overtimeHours < 0) newErrors.overtimeHours = 'Overtime hours cannot be negative.';
+      if (overtimeRatePerHour < 0) newErrors.overtimeRatePerHour = 'Overtime rate cannot be negative.';
+    } else {
+      if (directOvertimeAmount < 0) newErrors.directOvertimeAmount = 'Overtime amount cannot be negative.';
+    }
+
+    // Check that any added expense item has a description
+    for (const exp of additionalExpenses) {
+      if (!exp.description.trim() && exp.amount > 0) {
+        newErrors.expenses = 'All additional expense line items must have a description.';
+        break;
+      }
+      if (exp.amount < 0) {
+        newErrors.expenses = 'Expense amounts must be positive numbers.';
+        break;
+      }
+    }
+
+    // Check that any added deduction has a description
+    for (const ded of deductions) {
+      if (!ded.description.trim() && ded.amount > 0) {
+        newErrors.deductions = 'All deduction line items must have a description.';
+        break;
+      }
+      if (ded.amount < 0) {
+        newErrors.deductions = 'Deduction amounts must be positive numbers.';
+        break;
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setIsSubmitting(true);
+    try {
+      const payslipId = existingPayslip
+        ? existingPayslip.id
+        : `pay-${salaryMonth.replace(/\s+/g, '').toLowerCase()}-${currentEmployee.id}`;
+
+      const payslipNum = existingPayslip
+        ? existingPayslip.payslipNumber
+        : `PAY-${salaryMonth.replace(/\s+/g, '').toUpperCase()}-${currentEmployee.employeeCode}`;
+
+      // Filter out blank empty rows with zero amounts
+      const cleanExpenses = additionalExpenses.filter(e => e.description.trim().length > 0 && e.amount > 0);
+      const cleanDeductions = deductions.filter(d => d.description.trim().length > 0 && d.amount > 0);
+
+      const finalPayslip: Payslip = {
+        id: payslipId,
+        payslipNumber: payslipNum,
+        employeeId: currentEmployee.id,
+        employeeCode: currentEmployee.employeeCode,
+        employeeName: currentEmployee.name,
+        department: currentEmployee.department,
+        designation: currentEmployee.designation,
+        month: salaryMonth,
+        generatedDate: existingPayslip?.generatedDate || new Date().toISOString().slice(0, 10),
+
+        // Fixed base salary from employee - strictly read-only, employee record remains untouched!
+        baseSalary: fixedBaseSalary,
+
+        // Variable overtime
+        overtimeType,
+        overtimeHours: overtimeType === 'CALCULATED' ? Number(overtimeHours) : undefined,
+        overtimeRatePerHour: overtimeType === 'CALCULATED' ? Number(overtimeRatePerHour) : undefined,
+        overtimeAmount: effectiveOvertimeSalary,
+
+        // Additional expenses
+        additionalExpenses: cleanExpenses,
+        totalAdditionalExpenses,
+
+        // Deductions
+        deductions: cleanDeductions,
+        totalDeductions,
+
+        // Transparent calculations
+        grossEarnings,
+        netPay,
+
+        status,
+        paymentDate: status === 'PAID' ? new Date().toISOString().slice(0, 10) : undefined,
+        paymentMode,
+        bankReferenceNo: bankReferenceNo.trim() || undefined,
+        notes: notes.trim() || undefined
+      };
+
+      onSave(finalPayslip);
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payslip-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
+    >
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/90">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 shadow-2xs">
+              <Calculator className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 id="payslip-modal-title" className="font-bold text-base text-slate-900">
+                {isEditing ? `Edit Payslip: ${existingPayslip?.payslipNumber}` : 'Generate Monthly Payslip & Salary Voucher'}
+              </h2>
+              <p className="text-[11px] text-slate-500">
+                Configure fixed base earnings, variable overtime, site reimbursements, and statutory deductions
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Modal Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
+          {Object.keys(errors).length > 0 && (
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-800">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Please check the required fields:</p>
+                <ul className="list-disc list-inside mt-1 space-y-0.5 text-rose-700">
+                  {Object.values(errors).map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Section 1: Employee Details & Salary Period */}
+          <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/80 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <Building className="w-4 h-4 text-amber-600" />
+                <span>Employee & Payroll Period</span>
+              </span>
+              <span className="text-[11px] text-slate-500 font-medium">
+                Cycle: <strong className="text-slate-800">{salaryMonth}</strong>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              {/* Employee Selection */}
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Employee Details
+                </label>
+                {!isEditing && allEmployees.length > 1 ? (
+                  <select
+                    value={selectedEmployeeId}
+                    onChange={e => setSelectedEmployeeId(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 rounded-xl p-2.5 bg-white focus:ring-2 focus:ring-amber-500"
+                  >
+                    {allEmployees.map(emp => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name} ({emp.employeeCode}) — {emp.designation} [{emp.department}]
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-xl">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center shrink-0">
+                        {currentEmployee.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-slate-900">{currentEmployee.name}</p>
+                        <p className="text-[11px] text-slate-500">
+                          {currentEmployee.employeeCode} • {currentEmployee.designation} ({currentEmployee.department})
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {currentEmployee.status}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Salary Month */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Salary Period / Month <span className="text-rose-500">*</span></span>
+                </label>
+                <select
+                  value={salaryMonth}
+                  onChange={e => setSalaryMonth(e.target.value)}
+                  className="w-full text-xs font-semibold border border-slate-200 rounded-xl p-2.5 bg-white focus:ring-2 focus:ring-amber-500"
+                >
+                  {MONTH_OPTIONS.map(m => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Fixed Earnings (Base Monthly Salary) */}
+          <div className="bg-white rounded-xl p-4 border border-amber-200/80 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-amber-600" />
+                <span>Fixed Earnings (Base Monthly Salary)</span>
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300">
+                Read-Only • Fixed Master Rate
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Pre-filled from the employee record. As per company policy, this fixed base salary is non-editable during payslip generation to preserve master employment contracts.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-medium text-slate-500">Basic Monthly Pay</span>
+                  <p className="text-xs font-bold text-slate-800">{currentEmployee.designation}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-black text-slate-900">₹{fixedBaseSalary.toLocaleString('en-IN')}</span>
+                  <p className="text-[10px] text-slate-400">Fixed Base</p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-medium text-slate-500">Suggested Hourly Rate</span>
+                  <p className="text-[10px] text-slate-400">Calculated as Base / 26 days / 8 hrs</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold text-slate-700">₹{suggestedHourlyRate} / hr</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Variable Earnings — Overtime */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-emerald-600" />
+                  <span>Variable Earnings — Overtime Amount</span>
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  Choose between automated calculation (Hours × Rate) or direct manual overtime amount
+                </p>
+              </div>
+
+              {/* Mode Toggle */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setOvertimeType('CALCULATED')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    overtimeType === 'CALCULATED'
+                      ? 'bg-white text-emerald-800 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Hours & Hourly Rate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOvertimeType('DIRECT')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    overtimeType === 'DIRECT'
+                      ? 'bg-white text-emerald-800 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Direct Amount
+                </button>
+              </div>
+            </div>
+
+            {/* Overtime Controls */}
+            {overtimeType === 'CALCULATED' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-3.5 bg-emerald-50/40 rounded-xl border border-emerald-100">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Overtime Hours (hrs)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={overtimeHours}
+                    onChange={e => setOvertimeHours(parseFloat(e.target.value) || 0)}
+                    placeholder="e.g. 15"
+                    className="w-full text-xs font-mono font-bold border border-slate-200 rounded-xl p-2.5 bg-white focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Hourly Overtime Rate (₹ / hr)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="10"
+                    value={overtimeRatePerHour}
+                    onChange={e => setOvertimeRatePerHour(parseFloat(e.target.value) || 0)}
+                    placeholder={String(suggestedHourlyRate)}
+                    className="w-full text-xs font-mono font-bold border border-slate-200 rounded-xl p-2.5 bg-white focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="flex flex-col justify-center p-2.5 bg-white rounded-xl border border-emerald-200 text-right">
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Calculated Overtime Salary</span>
+                  <span className="text-base font-black text-emerald-800">
+                    ₹{effectiveOvertimeSalary.toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    ({overtimeHours} hrs × ₹{overtimeRatePerHour})
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3.5 bg-emerald-50/40 rounded-xl border border-emerald-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="w-full sm:w-1/2">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Direct Overtime Amount (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100"
+                    value={directOvertimeAmount}
+                    onChange={e => setDirectOvertimeAmount(parseFloat(e.target.value) || 0)}
+                    placeholder="e.g. 5000"
+                    className="w-full text-xs font-mono font-bold border border-slate-200 rounded-xl p-2.5 bg-white focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="w-full sm:w-1/2 p-2.5 bg-white rounded-xl border border-emerald-200 text-right">
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Effective Overtime Salary</span>
+                  <span className="text-base font-black text-emerald-800 block">
+                    ₹{effectiveOvertimeSalary.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section 4: Variable Earnings — Additional Expenses / Reimbursements */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Receipt className="w-4 h-4 text-sky-600" />
+                  <span>Additional Expenses & Approved Reimbursements</span>
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  Multiple line items with reason and amount (travel, site allowance, fuel, food, tools, incentive)
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleAddExpense()}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl transition-colors cursor-pointer self-start sm:self-auto"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Expense Line</span>
+              </button>
+            </div>
+
+            {/* Quick Add Presets */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Quick Suggestions:</span>
+              {COMMON_EXPENSE_PRESETS.map(preset => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => handleAddExpense(preset)}
+                  className="text-[10px] font-semibold text-slate-600 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 border border-slate-200 hover:border-sky-300 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                >
+                  + {preset}
+                </button>
+              ))}
+            </div>
+
+            {/* Expense Rows */}
+            {additionalExpenses.length === 0 ? (
+              <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
+                <p className="text-xs text-slate-500">
+                  No additional expense or reimbursement line items added for this cycle.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleAddExpense()}
+                  className="mt-2 text-xs font-bold text-sky-600 hover:text-sky-700 underline cursor-pointer"
+                >
+                  + Add first expense item
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {additionalExpenses.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-2 p-2.5 bg-slate-50/70 border border-slate-200 rounded-xl"
+                  >
+                    <span className="text-[11px] font-bold text-slate-400 w-5 text-center">
+                      #{index + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={item.description}
+                      onChange={e => handleUpdateExpense(item.id, 'description', e.target.value)}
+                      placeholder="e.g. Travel & Fuel Allowance Sanand Site"
+                      className="flex-1 text-xs border border-slate-200 rounded-lg p-2 bg-white focus:ring-2 focus:ring-sky-500"
+                    />
+                    <div className="relative w-36">
+                      <span className="absolute left-2.5 top-2 text-xs font-bold text-slate-400">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="50"
+                        value={item.amount || ''}
+                        onChange={e => handleUpdateExpense(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                        placeholder="0"
+                        className="w-full text-xs font-mono font-bold pl-6 pr-2.5 py-2 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-sky-500 text-right"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExpense(item.id)}
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title="Remove expense row"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+
+                <div className="flex items-center justify-between p-2.5 bg-sky-50/50 rounded-xl border border-sky-100 text-xs">
+                  <span className="font-bold text-sky-900">Total Additional Expenses:</span>
+                  <span className="font-black text-sky-900 text-sm">
+                    ₹{totalAdditionalExpenses.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section 5: Deductions */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <MinusCircle className="w-4 h-4 text-rose-600" />
+                  <span>Deductions (Statutory & Adjustments)</span>
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  Optional multiple deduction items (PF/ESI, TDS tax, advance recovery, unpaid leave, loan recovery)
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleAddDeduction()}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors cursor-pointer self-start sm:self-auto"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Deduction</span>
+              </button>
+            </div>
+
+            {/* Quick Deduction Presets */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Quick Suggestions:</span>
+              {COMMON_DEDUCTION_PRESETS.map(preset => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => handleAddDeduction(preset)}
+                  className="text-[10px] font-semibold text-slate-600 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 border border-slate-200 hover:border-rose-300 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                >
+                  + {preset}
+                </button>
+              ))}
+            </div>
+
+            {/* Deduction Rows */}
+            {deductions.length === 0 ? (
+              <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
+                <p className="text-xs text-slate-500">
+                  No deductions applied for this cycle (zero deductions).
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleAddDeduction()}
+                  className="mt-2 text-xs font-bold text-rose-600 hover:text-rose-700 underline cursor-pointer"
+                >
+                  + Add deduction row
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {deductions.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-2 p-2.5 bg-slate-50/70 border border-slate-200 rounded-xl"
+                  >
+                    <span className="text-[11px] font-bold text-slate-400 w-5 text-center">
+                      #{index + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={item.description}
+                      onChange={e => handleUpdateDeduction(item.id, 'description', e.target.value)}
+                      placeholder="e.g. Provident Fund (PF Contribution)"
+                      className="flex-1 text-xs border border-slate-200 rounded-lg p-2 bg-white focus:ring-2 focus:ring-rose-500"
+                    />
+                    <div className="relative w-36">
+                      <span className="absolute left-2.5 top-2 text-xs font-bold text-slate-400">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="50"
+                        value={item.amount || ''}
+                        onChange={e => handleUpdateDeduction(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                        placeholder="0"
+                        className="w-full text-xs font-mono font-bold pl-6 pr-2.5 py-2 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-rose-500 text-right"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDeduction(item.id)}
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title="Remove deduction row"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+
+                <div className="flex items-center justify-between p-2.5 bg-rose-50/50 rounded-xl border border-rose-100 text-xs">
+                  <span className="font-bold text-rose-900">Total Deductions:</span>
+                  <span className="font-black text-rose-900 text-sm">
+                    -₹{totalDeductions.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section 6: Transparent Salary Summary Card (Calculation Rules) */}
+          <div className="p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl shadow-md space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                  Transparent Salary Calculation Summary
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400 font-mono">
+                {salaryMonth} • {currentEmployee.employeeCode}
+              </span>
+            </div>
+
+            {/* Formula Breakdown Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Fixed Base Salary</span>
+                <span className="text-base font-bold text-white">₹{fixedBaseSalary.toLocaleString('en-IN')}</span>
+                <span className="text-[10px] text-emerald-400 block mt-0.5">Master Fixed</span>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Overtime Earnings</span>
+                <span className="text-base font-bold text-emerald-400">+₹{effectiveOvertimeSalary.toLocaleString('en-IN')}</span>
+                <span className="text-[10px] text-slate-400 block mt-0.5">
+                  {overtimeType === 'CALCULATED' ? `${overtimeHours} hrs @ ₹${overtimeRatePerHour}/hr` : 'Direct input'}
+                </span>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Additional Expenses</span>
+                <span className="text-base font-bold text-sky-400">+₹{totalAdditionalExpenses.toLocaleString('en-IN')}</span>
+                <span className="text-[10px] text-slate-400 block mt-0.5">{additionalExpenses.length} approved item(s)</span>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Total Deductions</span>
+                <span className="text-base font-bold text-rose-400">-₹{totalDeductions.toLocaleString('en-IN')}</span>
+                <span className="text-[10px] text-slate-400 block mt-0.5">{deductions.length} deduction(s)</span>
+              </div>
+            </div>
+
+            {/* Calculation Bottom Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-700/60 bg-black/20 -mx-4 -mb-4 p-4 rounded-b-2xl">
+              <div>
+                <span className="text-[11px] text-slate-300 block">
+                  Gross Earnings = Base (₹{fixedBaseSalary.toLocaleString('en-IN')}) + Overtime (₹{effectiveOvertimeSalary.toLocaleString('en-IN')}) + Expenses (₹{totalAdditionalExpenses.toLocaleString('en-IN')})
+                </span>
+                <span className="text-xs font-bold text-amber-200">
+                  Gross Earnings: ₹{grossEarnings.toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              <div className="text-right sm:border-l sm:border-slate-700 sm:pl-5">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-400 block">
+                  Net Pay Payable (Gross - Deductions)
+                </span>
+                <span className="text-2xl font-black text-emerald-400 tracking-tight">
+                  ₹{netPay.toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 7: Payment Details & Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                Payslip Status
+              </label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value as Payslip['status'])}
+                className="w-full text-xs font-semibold border border-slate-200 rounded-xl p-2.5 bg-white focus:ring-2 focus:ring-amber-500"
+              >
+                <option value="GENERATED">GENERATED (Approved, Ready to Disburse)</option>
+                <option value="PAID">PAID (Disbursed via Bank Transfer)</option>
+                <option value="DRAFT">DRAFT (Under Review)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                Disbursement Mode
+              </label>
+              <select
+                value={paymentMode}
+                onChange={e => setPaymentMode(e.target.value as Payslip['paymentMode'])}
+                className="w-full text-xs font-semibold border border-slate-200 rounded-xl p-2.5 bg-white focus:ring-2 focus:ring-amber-500"
+              >
+                <option value="NEFT/RTGS Bank Transfer">NEFT/RTGS Bank Transfer</option>
+                <option value="UPI">UPI Direct Corporate</option>
+                <option value="Cheque">Company Account Payee Cheque</option>
+                <option value="Cash">Cash Voucher</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                Bank / UTR Reference No.
+              </label>
+              <input
+                type="text"
+                value={bankReferenceNo}
+                onChange={e => setBankReferenceNo(e.target.value)}
+                placeholder="e.g. HDFC2026090812345"
+                className="w-full text-xs border border-slate-200 rounded-xl p-2.5 bg-white focus:ring-2 focus:ring-amber-500 font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-2xs transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-1.5 px-6 py-2.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>{isEditing ? 'Update Payslip' : 'Generate Payslip Voucher'}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

@@ -391,6 +391,76 @@ export interface AttendanceRecord {
   status: 'PRESENT' | 'LATE' | 'HALF DAY' | 'FIELD VISIT' | 'ABSENT';
 }
 
+export interface AdditionalExpenseItem {
+  id: string;
+  description: string;
+  amount: number;
+}
+
+export interface DeductionItem {
+  id: string;
+  description: string;
+  amount: number;
+}
+
+export interface Payslip {
+  id: string;
+  payslipNumber: string;
+  employeeId: string;
+  employeeCode: string;
+  employeeName: string;
+  department: string;
+  designation: string;
+  month: string; // e.g. "September 2026"
+  generatedDate: string;
+  
+  // Fixed earnings (pre-filled from employee record, read-only)
+  baseSalary: number;
+  
+  // Variable earnings
+  overtimeType: 'CALCULATED' | 'DIRECT';
+  overtimeHours?: number;
+  overtimeRatePerHour?: number;
+  overtimeAmount: number;
+  
+  additionalExpenses: AdditionalExpenseItem[];
+  totalAdditionalExpenses: number;
+  
+  // Deductions
+  deductions: DeductionItem[];
+  totalDeductions: number;
+  
+  // Calculations
+  grossEarnings: number; // baseSalary + overtimeAmount + totalAdditionalExpenses
+  netPay: number; // grossEarnings - totalDeductions
+  
+  status: 'DRAFT' | 'GENERATED' | 'PAID';
+  paymentDate?: string;
+  paymentMode?: 'NEFT/RTGS Bank Transfer' | 'Cheque' | 'Cash' | 'UPI';
+  bankReferenceNo?: string;
+  notes?: string;
+}
+
+export type HolidayType =
+  | 'NATIONAL'
+  | 'REGIONAL'
+  | 'FESTIVAL'
+  | 'COMPANY'
+  | 'OPTIONAL';
+
+export interface HolidayRecord {
+  id: string;
+  name: string;
+  date: string; // ISO date: YYYY-MM-DD
+  type: HolidayType;
+  description?: string;
+  isOptional: boolean;
+  applicableDepartments?: string[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+}
+
 export interface ServiceTicket {
   id: string;
   ticketId: string;
