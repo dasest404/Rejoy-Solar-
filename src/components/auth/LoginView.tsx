@@ -319,6 +319,25 @@ export const LoginView: React.FC = () => {
                 </>
               )}
             </button>
+
+            <div className="pt-3 border-t border-slate-100 text-center">
+              <button
+                type="button"
+                onClick={async () => {
+                  setEmail('admin@solarpulse.com');
+                  setPassword('solarpulse123');
+                  try {
+                    await login('admin@solarpulse.com', 'solarpulse123');
+                  } catch (err: any) {
+                    setErrorMessage(err?.message || 'Login failed');
+                  }
+                }}
+                className="w-full py-2.5 px-3 bg-amber-50 hover:bg-amber-100/80 border border-amber-200/80 rounded-xl text-xs font-bold text-amber-900 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>Instant Demo Login (Super Admin)</span>
+              </button>
+            </div>
           </form>
         </div>
 

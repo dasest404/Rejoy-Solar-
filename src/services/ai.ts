@@ -18,7 +18,7 @@ export interface AiPromptResponse {
 }
 
 export async function askSolarAiAssistant(request: AiPromptRequest): Promise<AiPromptResponse> {
-  const apiEndpoint = import.meta.env.VITE_AI_API_URL || '/api/gemini.php';
+  const apiEndpoint = import.meta.env.VITE_AI_API_URL || '/api/gemini';
 
   try {
     const response = await fetch(apiEndpoint, {
@@ -39,7 +39,7 @@ export async function askSolarAiAssistant(request: AiPromptRequest): Promise<AiP
     }
 
     const data = await response.json();
-    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || data.text || '';
 
     return {
       success: true,

@@ -23,8 +23,7 @@ import {
   Clock,
   ThumbsUp,
   RotateCcw,
-  Sparkles,
-  Lock
+  Sparkles
 } from 'lucide-react';
 
 interface StageCardProps {
